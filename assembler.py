@@ -8,29 +8,29 @@ FILE_NAME = 'test.asm'
 
 # Constants needed for parser
 # The values represent tuple of expected tokens
-SYMBOL_TABLE: Dict[str, Tuple[int, str, Union[str, None]]] = {
+SYMBOL_TABLE: Dict[str, Tuple[str]] = {
     # Arighmetic Instructions
     'mov': ('register', 'register'),
     'add': ('register', 'register'),
     'sub': ('register', 'register'),
     'mul': ('register', 'register'),
     'div': ('register', 'register'),
-    'inc': ('register'),
-    'dec': ('register'),
+    'inc': ('register',),
+    'dec': ('register',),
 
     # Branching Instructions
-    'jnz': ('label'),
-    'jz' : ('label'),
-    'jnc': ('label'),
-    'jc' : ('label'),
-    'jlt': ('label'),
-    'jle': ('label'),
-    'jgt': ('label'),
-    'jge': ('label'),
-    'je' : ('label'),
-    'jne': ('label'),
-    'jmp': ('label'),
-    'nop': ('label'),
+    'jnz': ('label',),
+    'jz' : ('label',),
+    'jnc': ('label',),
+    'jc' : ('label',),
+    'jlt': ('label',),
+    'jle': ('label',),
+    'jgt': ('label',),
+    'jge': ('label',),
+    'je' : ('label',),
+    'jne': ('label',),
+    'jmp': ('label',),
+    'nop': ('label',),
 }
 REGISTERS: Set[str] = {'ax', 'bx', 'cx', 'dx'}
 
