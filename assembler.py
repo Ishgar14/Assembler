@@ -15,6 +15,8 @@ SYMBOL_TABLE: Dict[str, Tuple[int, str, Union[str, None]]] = {
     'sub': (0, 'register', 'register'),
     'mul': (0, 'register', 'register'),
     'div': (0, 'register', 'register'),
+    'inc': (0, 'register'),
+    'dec': (0, 'register'),
 
     # Branching Instructions
     'jnz': (0, 'label'),
@@ -108,7 +110,7 @@ def parse(inst: str, line: int) -> Instruction:
         print(f"Incorrect number of operands in {FILE_NAME} on line {line}")
         print(f"Expected {len(exptected_tokens)} tokens got {len(parts) - 1}")
         return None
-    else:
+    elif len(parts) > 2:
         # Check for second operand
         op2 = parts[2].lower()
 
