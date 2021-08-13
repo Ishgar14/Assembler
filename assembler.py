@@ -7,32 +7,43 @@ PATH = './'
 FILE_NAME = 'test.asm'
 
 # Constants needed for parser
-# The values of key represent (opcode, exptected token, expected token)
+# The values represent tuple of expected tokens
 SYMBOL_TABLE: Dict[str, Tuple[int, str, Union[str, None]]] = {
     # Arighmetic Instructions
-    'mov': (0, 'register', 'register'),
-    'add': (0, 'register', 'register'),
-    'sub': (0, 'register', 'register'),
-    'mul': (0, 'register', 'register'),
-    'div': (0, 'register', 'register'),
-    'inc': (0, 'register'),
-    'dec': (0, 'register'),
+    'mov': ('register', 'register'),
+    'add': ('register', 'register'),
+    'sub': ('register', 'register'),
+    'mul': ('register', 'register'),
+    'div': ('register', 'register'),
+    'inc': ('register'),
+    'dec': ('register'),
 
     # Branching Instructions
-    'jnz': (0, 'label'),
-    'jz': (0, 'label'),
-    'jnc': (0, 'label'),
-    'jc': (0, 'label'),
-    'jlt': (0, 'label'),
-    'jle': (0, 'label'),
-    'jgt': (0, 'label'),
-    'jge': (0, 'label'),
-    'je': (0, 'label'),
-    'jne': (0, 'label'),
-    'jmp': (0, 'label'),
-    'nop': (0, 'label'),
+    'jnz': ('label'),
+    'jz' : ('label'),
+    'jnc': ('label'),
+    'jc' : ('label'),
+    'jlt': ('label'),
+    'jle': ('label'),
+    'jgt': ('label'),
+    'jge': ('label'),
+    'je' : ('label'),
+    'jne': ('label'),
+    'jmp': ('label'),
+    'nop': ('label'),
 }
 REGISTERS: Set[str] = {'ax', 'bx', 'cx', 'dx'}
+
+OPCODES: Dict[str, Union[int, Dict[str, int]]] = {
+    'mov': {
+        'ax': 0,
+        'bx': 0,
+        'cx': 0,
+        'dx': 0,
+    },
+
+
+}
 
 
 f = open(f'{PATH}{FILE_NAME}')
@@ -87,7 +98,7 @@ def parse(inst: str, line: int) -> Instruction:
     # check for opcode
     if parts[0].lower() in SYMBOL_TABLE:
         opcode = parts[0]
-        exptected_tokens = SYMBOL_TABLE[opcode][1:]
+        exptected_tokens = SYMBOL_TABLE[opcode]
     else:
         print(
             f"Incorrect instruction `{parts[0]}` on line {line} in file `test.asm`")
