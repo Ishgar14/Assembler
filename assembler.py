@@ -3,7 +3,7 @@ from typing import Dict, Set, Tuple, Union, List
 import re
 
 # File Reading
-PATH = 'Sem 5/Systems Programming/'
+PATH = './'
 FILE_NAME = 'test.asm'
 
 # Constants needed for parser
