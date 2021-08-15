@@ -4,12 +4,12 @@ import re
 
 # File Reading
 PATH = './'
-FILE_NAME = 'test.asm'
+FILE_NAME = 'test2.asm'
 
 # Constants needed for parser
-# The values represent tuple of expected tokens
+# The values of table represent tuple of expected tokens
 SYMBOL_TABLE = {
-    # Arighmetic Instructions
+    # Arithmetic Instructions
     'mov': [('register', 'register'), ('register', 'numeric_literal')],
     'add': [('register', 'register'), ('register', 'numeric_literal')],
     'sub': [('register', 'register'), ('register', 'numeric_literal')],
@@ -20,26 +20,28 @@ SYMBOL_TABLE = {
 
     # Branching Instructions
     'jnz': [('label',)],
-    'jz' : [('label',)],
+    'jz': [('label',)],
     'jnc': [('label',)],
-    'jc' : [('label',)],
+    'jc': [('label',)],
     'jlt': [('label',)],
     'jle': [('label',)],
     'jgt': [('label',)],
     'jge': [('label',)],
-    'je' : [('label',)],
+    'je': [('label',)],
     'jne': [('label',)],
     'jmp': [('label',)],
 
     # Micellaneous
     'int': [('numeric_literal',)],
-    'nop': [('',)],
+    'cmp': [('register', 'register'), ('register', 'numeric_literal')],
+    'nop': [],
 }
 
 REGISTERS: Set[str] = {
     # General Purpose Registers
     # 16-bit registers
     'ax', 'bx', 'cx', 'dx',
+    'sp', 'bp', 'si', 'di',
 
     # 8-bit registers
     'ah', 'al',
@@ -69,9 +71,7 @@ OPCODES = {
 
 }
 
-
-f = open(f'{PATH}{FILE_NAME}')
-
+ERROR_FOUND = False
 
 class Instruction:
     def __init__(self, label, opcode, operand1, operand2):
@@ -87,17 +87,18 @@ class Instruction:
 def is_valid_numeric_literal(num: str) -> bool:
     # It could be a hexadecimal value
     if num.startswith('0x'):
-        return num[2:].isnumeric()
-    
+        return re.match('[a-zA-Z0-9]', num[2:]) is not None
+
     elif num.endswith('h') or num.endswith('H'):
-        return num[:-1].isnumeric()
+        return re.match('[a-zA-Z0-9]', num[:-1]) is not None
 
     # Check for octal value
-    elif num.startswith('0'):
+    elif num.startswith('0') and len(num) > 1:
         return num[1:].isnumeric()
-    
+
     # Check for decimal value
     return num.isnumeric()
+
 
 def get_token_type(token: str) -> str:
     if token in REGISTERS:
@@ -111,13 +112,15 @@ def get_token_type(token: str) -> str:
 
 # This function checks whether expected token and given token match
 # If they do then return empty string otherwise return string with error message
+
+
 def check(expected: List[str], got: str, line: int) -> str:
     expected = list(set(expected))
-    token_type = get_token_type(got)
+    token_type = get_token_type(got.lower())
 
     if token_type in expected:
         return ''
-    
+
     if len(expected) > 1:
         expectations = ', '.join(expected[:-1]) + ' or ' + expected[-1]
         return f'On line {line} expected any of {expectations} but got `{got}`'
@@ -127,10 +130,11 @@ def check(expected: List[str], got: str, line: int) -> str:
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
-    (label, opcode, operand1, operand2) = (None, None, None, None)
+    global ERROR_FOUND
+    label, opcode, operand1, operand2 = (None, None, None, None)
 
     parts = list(filter(lambda x: len(x) > 0, re.split(r'\s+|,', inst)))
-    
+
     if ':' in parts[0] and parts[0][-1] != ':':
         # properly break the instruction into parts
         backup = parts[1:]
@@ -142,8 +146,14 @@ def parse(inst: str, line: int) -> Instruction:
     # if first component is a label
     if parts[0][-1] == ':':
         label = parts[0][:-1]
+
         if label in backlog_labels:
             backlog_labels.remove(label)
+        
+        if label in labels:
+            ERROR_FOUND = True
+            print(f"Redeclared the label {label} on line {line}")
+            return None
         
         labels.add(label)
         parts = parts[1:]
@@ -152,14 +162,22 @@ def parse(inst: str, line: int) -> Instruction:
     if parts[0].lower() in SYMBOL_TABLE:
         opcode = parts[0]
         exptected_tokens = SYMBOL_TABLE[opcode.lower()]
-        exptected_tokens = [tup[0] for tup in exptected_tokens]
+        
+        if len(exptected_tokens) > 0:
+            exptected_tokens = [tup[0] for tup in exptected_tokens]
+        else:
+            return Instruction(label, opcode, operand1, operand2)
+    
     else:
-        print(f"Unknown instruction `{parts[0]}` on line {line} in file '{FILE_NAME}'")
+        ERROR_FOUND = True
+        print(
+            f"Unknown instruction `{parts[0]}` on line {line} in file '{FILE_NAME}'")
         return None
 
     if len(parts) - 1 != len(exptected_tokens):
         print(f"Incorrect number of operands in {FILE_NAME} on line {line}")
         print(f"Expected {len(exptected_tokens)} tokens got {len(parts) - 1}")
+        ERROR_FOUND = True
         return None
 
     # Check for first operand
@@ -170,19 +188,24 @@ def parse(inst: str, line: int) -> Instruction:
         op1 = op1[:-1]
 
     err = check(exptected_tokens, op1, line)
+    
     if err and opcode.lower() not in JUMP_INSTRUCTIONS:
+        ERROR_FOUND = True
         print(err)
         return None
     else:
         operand1 = op1.lower()
+        
         if opcode in JUMP_INSTRUCTIONS and op1 not in labels:
             backlog_labels.add(op1)
 
     if len(parts) > 2:
         exptected_tokens = SYMBOL_TABLE[opcode.lower()]
         exptected_tokens = [tup[1] for tup in exptected_tokens]
+    
         # Check for second operand
         if err := check(exptected_tokens, parts[2], line):
+            ERROR_FOUND = True
             print(err)
             return None
         else:
@@ -198,39 +221,44 @@ backlog_labels: Set[str] = set()
 
 def main():
     i = 0
+    f = open(f'{PATH}{FILE_NAME}')
+    
     while line := f.readline():
         i += 1
         comment_index = line.find(';')
+        
         if comment_index == -1:
             ins = parse(line, i)
             instructions.append(ins)
-            
 
         else:
             line = line[:comment_index]
+    
             if len(line) > 0:
                 ins = parse(line, i)
                 instructions.append(ins)
 
         # print(line)
         # print(ins)
+    
+    f.close()
 
 
 def print_instructions():
     print("Label\tOpcode\tOperand1\tOperand2")
+    
     for ins in instructions:
         print(ins)
 
 
 if __name__ == '__main__':
     main()
-    print_instructions()
+    if not ERROR_FOUND:
+        print_instructions()
 
     if backlog_labels:
         print(f"There are {len(backlog_labels)} undefined labels in source code")
         print(backlog_labels)
-    
+
     # print(labels)
     # print(backlog_labels)
-
-f.close()
