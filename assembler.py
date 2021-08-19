@@ -4,17 +4,29 @@ import re
 
 # File Reading
 PATH = './'
-FILE_NAME = 'test2.asm'
+FILE_NAME = 'test3.asm'
 
 # Constants needed for parser
+
+# Set of all assembler directives
+DIRECTIVES = {'start','end'}
+
 # The values of table represent tuple of expected tokens
-SYMBOL_TABLE = {
+MNEMONIC_TABLE = {
+    # Data transfer Instructions
+    'mov': [('register', 'numeric_literal'),],
+    'mover': [('register', 'label'),],
+    'movem': [('register', 'label'),],
+
+    # IO Instructions
+    'read': [('label',)],
+    'print': [('label',)],
+
     # Arithmetic Instructions
-    'mov': [('register', 'register'), ('register', 'numeric_literal')],
-    'add': [('register', 'register'), ('register', 'numeric_literal')],
-    'sub': [('register', 'register'), ('register', 'numeric_literal')],
-    'mul': [('register', 'register'), ('register', 'numeric_literal')],
-    'div': [('register', 'register'), ('register', 'numeric_literal')],
+    'add': [('register', 'label'), ('register', 'numeric_literal')],
+    'sub': [('register', 'label'), ('register', 'numeric_literal')],
+    'mul': [('register', 'label'), ('register', 'label'), ('register', 'numeric_literal')],
+    'div': [('register', 'label'), ('register', 'label'), ('register', 'numeric_literal')],
     'inc': [('register',)],
     'dec': [('register',)],
 
@@ -31,29 +43,28 @@ SYMBOL_TABLE = {
     'jne': [('label',)],
     'jmp': [('label',)],
 
+    # Memory Creation Instructions
+    'ds': [('numeric_literal',)],
+    'dc': [('numeric_literal',)],
+
     # Micellaneous
     'int': [('numeric_literal',)],
-    'cmp': [('register', 'register'), ('register', 'numeric_literal')],
+    'cmp': [('register', 'register'), ('register', 'label'), ('register', 'numeric_literal')],
     'nop': [],
 }
 
-REGISTERS: Set[str] = {
-    # General Purpose Registers
-    # 16-bit registers
-    'ax', 'bx', 'cx', 'dx',
-    'sp', 'bp', 'si', 'di',
-
-    # 8-bit registers
-    'ah', 'al',
-    'bh', 'bl',
-    'ch', 'cl',
-    'dh', 'dl',
-
-    # Segment Registers
-    'ds', 'ss', 'es',
+REGISTERS = {
+    'areg': 0, 
+    'breg': 1,
+    'creg': 2,
+    'dreg': 3,
 }
 
-JUMP_INSTRUCTIONS: Set[str] = {
+IO_INSTRUCTIONS = {
+    'read', 'print'
+}
+
+JUMP_INSTRUCTIONS = {
     'je', 'jne', 'jz', 'jnz',
     'jl', 'jle', 'jg', 'jge',
     'jc', 'jnc', 'jp', 'jnp',
@@ -61,24 +72,18 @@ JUMP_INSTRUCTIONS: Set[str] = {
 }
 
 OPCODES = {
-    'mov': {
-        'ax': 0,
-        'bx': 0,
-        'cx': 0,
-        'dx': 0,
-    },
-
-
+    
 }
 
 ERROR_FOUND = False
 
 class Instruction:
-    def __init__(self, label, opcode, operand1, operand2):
+    def __init__(self, label, opcode, operand1, operand2, inst_type='mne'):
         self.label = label
         self.opcode = opcode
         self.operand1 = operand1
         self.operand2 = operand2
+        self.instruction_type = inst_type
 
     def __repr__(self) -> str:
         return f"{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}"
@@ -103,8 +108,10 @@ def is_valid_numeric_literal(num: str) -> bool:
 def get_token_type(token: str) -> str:
     if token in REGISTERS:
         return 'register'
-    # elif token in labels:
-    #     return 'label'
+    elif token in DIRECTIVES:
+        return 'directive'
+    elif token in labels:
+        return 'label'
     elif is_valid_numeric_literal(token):
         return 'numeric_literal'
     else:
@@ -115,12 +122,14 @@ def get_token_type(token: str) -> str:
 
 
 def check(expected: List[str], got: str, line: int) -> str:
-    expected = list(set(expected))
+    expected = (set(expected))
     token_type = get_token_type(got.lower())
 
-    if token_type in expected:
+    if token_type in expected or 'label' in expected:
         return ''
 
+    expected = list(expected)
+    
     if len(expected) > 1:
         expectations = ', '.join(expected[:-1]) + ' or ' + expected[-1]
         return f'On line {line} expected any of {expectations} but got `{got}`'
@@ -131,7 +140,7 @@ def check(expected: List[str], got: str, line: int) -> str:
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
     global ERROR_FOUND
-    label, opcode, operand1, operand2 = (None, None, None, None)
+    label, opcode, operand1, operand2 = "", "", "", ""
 
     parts = list(filter(lambda x: len(x) > 0, re.split(r'\s+|,', inst)))
 
@@ -158,13 +167,27 @@ def parse(inst: str, line: int) -> Instruction:
         labels.add(label)
         parts = parts[1:]
 
-    # check for opcode
-    if parts[0].lower() in SYMBOL_TABLE:
-        opcode = parts[0]
-        exptected_tokens = SYMBOL_TABLE[opcode.lower()]
+    # If first part is a assembler directive
+    if parts[0].lower() in DIRECTIVES:
+        p = parts[0].lower()
+        if p == 'start':
+            if  len(parts) > 1 and not parts[1].isnumeric:
+                print(f"Expected a number but got {type(parts[1])}")
+                return None
+        elif p == 'end':
+            return Instruction(label, opcode, operand1, operand2, "directive")
         
-        if len(exptected_tokens) > 0:
-            exptected_tokens = [tup[0] for tup in exptected_tokens]
+        return Instruction(label, opcode, operand1, operand2, "directive")
+            
+
+    # check for opcode
+    if parts[0].lower() in MNEMONIC_TABLE:
+        opcode = parts[0]
+        expected_tokens = MNEMONIC_TABLE[opcode.lower()]
+        
+        if len(expected_tokens) > 0:
+            pass
+            # exptected_tokens = [tup[0] for tup in exptected_tokens]
         else:
             return Instruction(label, opcode, operand1, operand2)
     
@@ -174,11 +197,11 @@ def parse(inst: str, line: int) -> Instruction:
             f"Unknown instruction `{parts[0]}` on line {line} in file '{FILE_NAME}'")
         return None
 
-    if len(parts) - 1 != len(exptected_tokens):
-        print(f"Incorrect number of operands in {FILE_NAME} on line {line}")
-        print(f"Expected {len(exptected_tokens)} tokens got {len(parts) - 1}")
-        ERROR_FOUND = True
-        return None
+    # if len(parts) - 1 != len(expected_tokens):
+    #     print(f"Incorrect number of operands in {FILE_NAME} on line {line}")
+    #     print(f"Expected {len(expected_tokens)} tokens got {len(parts) - 1}")
+    #     ERROR_FOUND = True
+    #     return None
 
     # Check for first operand
     op1 = parts[1]
@@ -187,7 +210,7 @@ def parse(inst: str, line: int) -> Instruction:
     if op1[-1] == ',':
         op1 = op1[:-1]
 
-    err = check(exptected_tokens, op1, line)
+    err = check(expected_tokens, op1, line)
     
     if err and opcode.lower() not in JUMP_INSTRUCTIONS:
         ERROR_FOUND = True
@@ -196,15 +219,15 @@ def parse(inst: str, line: int) -> Instruction:
     else:
         operand1 = op1.lower()
         
-        if opcode in JUMP_INSTRUCTIONS and op1 not in labels:
+        if (opcode in JUMP_INSTRUCTIONS or opcode in IO_INSTRUCTIONS) and op1 not in labels:
             backlog_labels.add(op1)
 
     if len(parts) > 2:
-        exptected_tokens = SYMBOL_TABLE[opcode.lower()]
-        exptected_tokens = [tup[1] for tup in exptected_tokens]
+        expected_tokens = MNEMONIC_TABLE[opcode.lower()]
+        expected_tokens = [tup[1] for tup in expected_tokens]
     
         # Check for second operand
-        if err := check(exptected_tokens, parts[2], line):
+        if err := check(expected_tokens, parts[2], line):
             ERROR_FOUND = True
             print(err)
             return None
@@ -224,6 +247,9 @@ def main():
     f = open(f'{PATH}{FILE_NAME}')
     
     while line := f.readline():
+        if len(line.strip()) == 0:
+            continue
+
         i += 1
         comment_index = line.find(';')
         
@@ -248,17 +274,19 @@ def print_instructions():
     print("Label\tOpcode\tOperand1\tOperand2")
     
     for ins in instructions:
-        print(ins)
+        if ins.instruction_type != 'directive':
+            print(ins)
 
 
 if __name__ == '__main__':
     main()
-    if not ERROR_FOUND:
+    if backlog_labels:
+        print(f"Warning: There are {len(backlog_labels)} undefined labels in source code")
+        print(backlog_labels)
+
+    elif not ERROR_FOUND:
         print_instructions()
 
-    if backlog_labels:
-        print(f"There are {len(backlog_labels)} undefined labels in source code")
-        print(backlog_labels)
 
     # print(labels)
     # print(backlog_labels)
