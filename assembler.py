@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 import re
+import sys
 
 # File Reading
 PATH = './'
@@ -257,8 +258,7 @@ def output(fname = "output.txt", *, opcodenumbers = False):
 
     f.close()
 
-if __name__ == '__main__':
-    main()
+def error_or_execute():
     if backlog_labels:
         print(f"Error: There are {len(backlog_labels)} undefined labels in source code")
         for back in backlog_labels:
@@ -267,4 +267,8 @@ if __name__ == '__main__':
     elif not ERROR_FOUND:
         print_instructions()
         output(opcodenumbers=False)
-    # print(labels)
+
+if __name__ == '__main__':
+    main()
+    error_or_execute()
+    
