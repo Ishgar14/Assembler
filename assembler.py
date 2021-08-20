@@ -15,7 +15,7 @@ REGISTERS = { 'areg', 'breg', 'creg', 'dreg',}
 
 IO_INSTRUCTIONS = { 'read', 'print' }
 
-DATA_TRANSFER_INSTRUCTIONS = { 'movem', 'mover' }
+DATA_TRANSFER_INSTRUCTIONS = { 'movem', 'mover' , 'mov' }
 
 ARITHMETIC_INSTRUCTIONS = { 'add', 'sub', 'mul', 'div', 'inc', 'dec', 'cmp' }
 
@@ -26,9 +26,11 @@ JUMP_INSTRUCTIONS = {
     'jmp'
 }
 
-# The values of table represent tuple of expected tokens
+MICELLANEOUS_INSTRUCTIONS = { 'int', 'nop' }
+
+# The set of valid symbols
 MNEMONIC_TABLE = ARITHMETIC_INSTRUCTIONS | JUMP_INSTRUCTIONS | IO_INSTRUCTIONS  \
-    | DIRECTIVES | DATA_TRANSFER_INSTRUCTIONS
+    | DIRECTIVES | DATA_TRANSFER_INSTRUCTIONS | MICELLANEOUS_INSTRUCTIONS
 
 ERROR_FOUND = False
 
@@ -45,11 +47,7 @@ class Instruction:
         return f"{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}"
 
 
-# This function parses one instruction at a time and returns an object of class `Instruction`
-def parse(inst: str, line: int) -> Instruction:
-    global ERROR_FOUND
-    label, opcode, operand1, operand2 = "", "", "", ""
-
+def split(inst: str) -> list:
     parts = list(filter(lambda x: len(x) > 0, re.split(r'\s+|,', inst)))
 
     if ':' in parts[0] and parts[0][-1] != ':':
@@ -58,6 +56,15 @@ def parse(inst: str, line: int) -> Instruction:
         parts = parts[0].split(':')
         parts[0] += ':'
         parts.extend(backup)
+    
+    return parts
+
+# This function parses one instruction at a time and returns an object of class `Instruction`
+def parse(inst: str, line: int) -> Instruction:
+    global ERROR_FOUND
+    label, opcode, operand1, operand2 = "", "", "", ""
+
+    parts = split(inst)
 
     # if first component is a label
     if parts[0][-1] == ':':
@@ -68,7 +75,7 @@ def parse(inst: str, line: int) -> Instruction:
         
         if label in labels:
             ERROR_FOUND = True
-            print(f"Redeclared the label {label} on line {line}")
+            print(f"Redeclared the label `{label}` on line {line}")
             return None
         
         labels.add(label)
@@ -98,6 +105,9 @@ def parse(inst: str, line: int) -> Instruction:
         return None
 
     # Check for first operand
+    if len(parts) < 2:
+        return Instruction(label, opcode, operand1, operand2)
+
     op1 = parts[1]
 
     # The comma is optional
@@ -106,12 +116,14 @@ def parse(inst: str, line: int) -> Instruction:
 
     operand1 = op1.lower()
     
-    if (opcode in JUMP_INSTRUCTIONS or opcode in IO_INSTRUCTIONS) and op1 not in labels:
-        backlog_labels.add(op1)
+    # if (opcode in JUMP_INSTRUCTIONS or opcode in IO_INSTRUCTIONS) and op1 not in labels:
+    #     backlog_labels.add(op1)
 
     if len(parts) > 2:
-        if opcode in DATA_TRANSFER_INSTRUCTIONS and parts[2].lower() not in labels:
-            backlog_labels.add(parts[2])
+        if opcode in DATA_TRANSFER_INSTRUCTIONS and not parts[2].isnumeric():
+            # labels.add(parts[2])
+            if parts[2] in backlog_labels:
+                backlog_labels.remove(parts[2])
         
         operand2 = parts[2].lower()
 
@@ -124,8 +136,12 @@ backlog_labels: Set[str] = set()
 
 
 def main():
-    i = 0
+    i, LC = 0, 0
     f = open(f'{PATH}{FILE_NAME}')
+
+    line = split(f.readline())
+    if line[0] == 'start' and len(line) == 2:
+        LC = int(line[1])
     
     while line := f.readline():
         if len(line.strip()) == 0:
@@ -139,7 +155,7 @@ def main():
         if len(line) > 0:
             ins = parse(line, i)
             if ins:
-                ins.line = i
+                ins.line = i + LC
                 instructions.append(ins)
     
     f.close()
