@@ -100,7 +100,13 @@ def parse(inst: str, line: int) -> Instruction:
             ins.LC = LC
             return ins
         elif p == 'org':
-            LC = int(parts[1])
+            if len(parts) < 2:
+                ERROR_FOUND = True
+                print(f"Expected one integer after `org` on line {line}")
+            else:
+                LC = int(parts[1])
+            ins = Instruction(label, parts[0].lower(), operand1, operand2, "directive")
+            return ins
         elif p == 'ds':
             times = int(parts[1])
             collection = []
