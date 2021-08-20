@@ -1,36 +1,40 @@
-from typing import Set, List
+from typing import Dict, List
 
 import re
 
 # File Reading
 PATH = './'
 FILE_NAME = 'test3.asm'
+LC = 0
 
 # Constants needed for parser
+REGISTERS = { 'areg': 0, 'breg': 1, 'creg': 2, 'dreg': 3,}
 
 # Set of all assembler directives
-DIRECTIVES = {'start','end', 'ds', 'dc'}
+# The tuple represents (opcode, size of instruction)
+MEMORY_DIRECTIVES = { 'ds': (10, 2), 'dc': (11, 2) }
+DIRECTIVES = { 'start': (0, 2), 'end': (0, 1), 'org': (0, 2) } | MEMORY_DIRECTIVES
 
-REGISTERS = { 'areg', 'breg', 'creg', 'dreg',}
 
-IO_INSTRUCTIONS = { 'read', 'print' }
+IO_INSTRUCTIONS = { 'read': (1, 2), 'print': (2, 2) }
 
-DATA_TRANSFER_INSTRUCTIONS = { 'movem', 'mover' , 'mov' }
+DATA_TRANSFER_INSTRUCTIONS = { 'movem' : (3, 3), 'mover': (4, 3) , 'mov': (0, 3) }
 
-ARITHMETIC_INSTRUCTIONS = { 'add', 'sub', 'mul', 'div', 'inc', 'dec', 'cmp' }
+ARITHMETIC_INSTRUCTIONS = { 'add': (5, 3), 'sub': (6, 3), 'mul': (7, 3), 'div': (8, 3), 'cmp': (9, 3) }
 
 JUMP_INSTRUCTIONS = {
-    'je', 'jne', 'jz', 'jnz',
-    'jl', 'jle', 'jg', 'jge',
-    'jc', 'jnc', 'jp', 'jnp',
-    'jmp'
+    'bc': (10, 3),
+    'je': (0, 2), 'jne': (1, 2), 'jz': (0, 2), 'jnz': (1, 2),
+    'jl': (2, 2), 'jle': (2, 2), 'jg': (4, 2), 'jge': (5, 2),
+    'jc': (6, 2), 'jnc': (7, 2), 'jp': (8, 2), 'jnp': (9, 2),
+    'jmp': (10, 2), 'any': (11, 3)
 }
 
-MICELLANEOUS_INSTRUCTIONS = { 'int', 'nop' }
+MICELLANEOUS_INSTRUCTIONS = { 'int': (0, 2), 'nop': (0, 1) }
 
 # The set of valid symbols
 MNEMONIC_TABLE = ARITHMETIC_INSTRUCTIONS | JUMP_INSTRUCTIONS | IO_INSTRUCTIONS  \
-    | DIRECTIVES | DATA_TRANSFER_INSTRUCTIONS | MICELLANEOUS_INSTRUCTIONS
+    | DATA_TRANSFER_INSTRUCTIONS | MICELLANEOUS_INSTRUCTIONS
 
 ERROR_FOUND = False
 
@@ -42,6 +46,7 @@ class Instruction:
         self.operand2 = operand2
         self.instruction_type = inst_type
         self.line = -1
+        self.LC = -1
 
     def __repr__(self) -> str:
         return f"{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}"
@@ -61,7 +66,7 @@ def split(inst: str) -> list:
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
-    global ERROR_FOUND
+    global ERROR_FOUND, LC
     label, opcode, operand1, operand2 = "", "", "", ""
 
     parts = split(inst)
@@ -71,14 +76,15 @@ def parse(inst: str, line: int) -> Instruction:
         label = parts[0][:-1]
 
         if label in backlog_labels:
-            backlog_labels.remove(label)
+            del backlog_labels[label]
         
         if label in labels:
             ERROR_FOUND = True
             print(f"Redeclared the label `{label}` on line {line}")
             return None
         
-        labels.add(label)
+        # labels.add(label)
+        labels[label] = LC
         parts = parts[1:]
 
     # If first part is a assembler directive
@@ -86,27 +92,55 @@ def parse(inst: str, line: int) -> Instruction:
         p = parts[0].lower()
         if p == 'start':
             if  len(parts) > 1 and not parts[1].isnumeric:
-                print(f"Expected a number but got {type(parts[1])}")
+                print(f"On line {line} expected a number but got {type(parts[1])}")
                 return None
         elif p == 'end':
-            return Instruction(label, opcode, operand1, operand2, "directive")
-        
-        return Instruction(label, opcode, operand1, operand2, "directive")
+            ins = Instruction(label, "end", operand1, operand2, "directive")
+            ins.LC = LC
+            return ins
+        elif p == 'org':
+            LC = int(parts[1])
+        elif p == 'ds':
+            times = int(parts[1])
+            collection = []
+
+            for _ in range(times):
+                ins = Instruction(label, parts[0].lower(), 0, operand2, "memory")
+                ins.LC = LC
+                LC += 1
+                collection.append(ins)
+            return collection
+
+        elif p == 'dc':
+            if len(parts) > 1: operand1 = parts[1]
+            if len(parts) > 2: operand2 = parts[2]
+
+            ins = Instruction(label, parts[0].lower(), operand1, operand2, "memory")
+            ins.LC = LC
+            LC += DIRECTIVES[parts[0].lower()][1]
+            return ins
             
 
     # check for opcode
     if parts[0].lower() in MNEMONIC_TABLE:
         opcode = parts[0]
+        size = MNEMONIC_TABLE[parts[0].lower()][1]
+        if len(parts) != size:
+            ERROR_FOUND = True
+            print(f"On line {line} `{inst.strip()}`\nExpected {size} tokens but got {len(parts)}")
+            return 
     
     else:
         ERROR_FOUND = True
         print(
             f"Unknown instruction `{parts[0]}` on line {line} in file '{FILE_NAME}'")
-        return None
+        return 
 
     # Check for first operand
     if len(parts) < 2:
-        return Instruction(label, opcode, operand1, operand2)
+        ins = Instruction(label, opcode, operand1, operand2)
+        ins.LC = LC
+        return ins
 
     op1 = parts[1]
 
@@ -114,29 +148,39 @@ def parse(inst: str, line: int) -> Instruction:
     if op1[-1] == ',':
         op1 = op1[:-1]
 
-    operand1 = op1.lower()
-    
-    # if (opcode in JUMP_INSTRUCTIONS or opcode in IO_INSTRUCTIONS) and op1 not in labels:
-    #     backlog_labels.add(op1)
+    if opcode in IO_INSTRUCTIONS:
+        operand1 = op1
+    else:
+        operand1 = op1.lower()
+
+    if opcode in DATA_TRANSFER_INSTRUCTIONS and operand1 not in REGISTERS:
+        ERROR_FOUND = True
+        print(f"Illegal operand `{op1}` expected register")
+        return 
 
     if len(parts) > 2:
-        if opcode in DATA_TRANSFER_INSTRUCTIONS and not parts[2].isnumeric():
-            # labels.add(parts[2])
-            if parts[2] in backlog_labels:
-                backlog_labels.remove(parts[2])
+        if opcode in DATA_TRANSFER_INSTRUCTIONS:
+            if parts[2].isnumeric():
+                pass
+            else:
+                backlog_labels[parts[2]] = (line, LC)
         
-        operand2 = parts[2].lower()
+        operand2 = parts[2]
 
-    return Instruction(label, opcode, operand1, operand2)
+    ins = Instruction(label, opcode, operand1, operand2)
+    ins.LC = LC
+    LC += size
+    return ins
 
 
 instructions: List[Instruction] = []
-labels: Set[str] = set()
-backlog_labels: Set[str] = set()
+labels: Dict[str, int] = {}
+backlog_labels: Dict[str, int] = {}
 
 
 def main():
-    i, LC = 0, 0
+    global ERROR_FOUND, LC
+    i = 0
     f = open(f'{PATH}{FILE_NAME}')
 
     line = split(f.readline())
@@ -155,8 +199,13 @@ def main():
         if len(line) > 0:
             ins = parse(line, i)
             if ins:
-                ins.line = i + LC
-                instructions.append(ins)
+                if isinstance(ins, list):
+                    for ii in ins:
+                        ii.line = i
+                        instructions.append(ii)
+                else:
+                    ins.line = i# + LC
+                    instructions.append(ins)
     
     f.close()
 
@@ -165,18 +214,57 @@ def print_instructions():
     print("Label\tOpcode\tOperand1\tOperand2")
     
     for ins in instructions:
-        if ins.instruction_type != 'directive':
+        if ins.instruction_type == 'mne':
             print(ins)
 
+def mnemonic_to_opcode(opcode, operand1, operand2):
+    if opcode in MNEMONIC_TABLE:
+        opcode = MNEMONIC_TABLE[opcode][0]
+    elif opcode in DIRECTIVES:
+        opcode = DIRECTIVES[opcode][0]
+        
+    if operand1 in labels or opcode in IO_INSTRUCTIONS:
+        operand1 = labels[operand1]
+    elif operand1 in MNEMONIC_TABLE:
+        operand1 = MNEMONIC_TABLE[operand1][0]
+    if operand1 in REGISTERS:
+        operand1 = REGISTERS[operand1]
+    if operand2 and operand2 in labels:
+        operand2 = labels[operand2]
+    
+    return (opcode, operand1, operand2)
+
+def output(fname = "output.txt", *, opcodenumbers = False):
+    f = open(fname, 'w')
+
+    for inst in instructions:
+        if inst.instruction_type == 'directive':
+            if inst.opcode not in MEMORY_DIRECTIVES:
+                continue
+        
+        opcode = inst.opcode
+        op1 = inst.operand1
+        op2 = inst.operand2
+
+        if opcode in MEMORY_DIRECTIVES:
+            opcode = ''
+        if opcodenumbers:
+            opcode, op1, op2 = mnemonic_to_opcode(opcode, op1, op2)
+        
+        # print(opcode, op1, op2)
+
+        f.write(f"{inst.LC}: {opcode} {op1} {op2}\n")
+
+    f.close()
 
 if __name__ == '__main__':
     main()
     if backlog_labels:
         print(f"Error: There are {len(backlog_labels)} undefined labels in source code")
         for back in backlog_labels:
-            print(back, end=' ')
+            print(f"In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code", end=' ')
 
     elif not ERROR_FOUND:
         print_instructions()
-
+        output(opcodenumbers=False)
     # print(labels)
