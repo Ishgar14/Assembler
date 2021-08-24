@@ -144,6 +144,8 @@ def directive_processor(parts: List[str], line: int) -> Instruction:
         literals = literals | backlog_literals
         backlog_literals.clear()
 
+        return Instruction('', parts[0], '', '', "directive")
+
 
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
