@@ -53,6 +53,6 @@ is a valid program
 
 For example
     
-    mov creg, MEMORYLOC
+    mover creg, MEMORYLOC
 
 if `MEMORYLOC` label is not defined anywhere in source code then a friendly error message is displayed on screen
