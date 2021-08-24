@@ -2,6 +2,9 @@
 
 This repository contains code for assembler
 
+# Requirements
+Python 3.6+
+
 # How to use?
 
 Create a new assembly file then
