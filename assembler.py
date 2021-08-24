@@ -80,9 +80,9 @@ def split(inst: str) -> List[str]:
     return parts
 
 
-def directive_processor(parts: List[str], line: int) -> Instruction:
+def directive_processor(parts: List[str], line: int, label: str = "") -> Instruction:
     global LC, ERROR_FOUND, literals
-    label, opcode, operand1, operand2 = "", "", "", ""
+    operand1, operand2 = "", ""
 
     p = parts[0].lower()
     if p == 'start':
@@ -118,9 +118,13 @@ def directive_processor(parts: List[str], line: int) -> Instruction:
         times = int(parts[1])
         collection = []
 
-        for _ in range(times):
+        ins = Instruction(label, parts[0].lower(), 0, operand2, "memory", _LC=LC)
+        LC += MEMORY_WIDTH
+        collection.append(ins)
+
+        for _ in range(times - 1):
             ins = Instruction(
-                label, parts[0].lower(), 0, operand2, "memory", _LC=LC)
+                '', parts[0].lower(), 0, operand2, "memory", _LC=LC)
             LC += MEMORY_WIDTH
             collection.append(ins)
         return collection
@@ -139,7 +143,7 @@ def directive_processor(parts: List[str], line: int) -> Instruction:
     
     elif p == 'ltorg':
         for key in backlog_literals:
-            inst = Instruction(backlog_literals[key], key, '', '', "memory", _LC=LC)
+            inst = Instruction(backlog_literals[key], '', key, '', "memory", _LC=LC)
             instructions.append(inst)
             literal_instructions.append(inst)
             backlog_literals[key] = [backlog_literals[key], inst]
@@ -176,7 +180,7 @@ def parse(inst: str, line: int) -> Instruction:
 
     # If first part is a assembler directive
     if parts[0].lower() in DIRECTIVES:
-        return directive_processor(parts, line)
+        return directive_processor(parts, line, label)
 
     # check for opcode
     if parts[0].lower() in MNEMONIC_TABLE:
@@ -308,8 +312,7 @@ def pass2() -> bool:
     all_good = True
 
     for key in backlog_literals:
-        inst = Instruction(literals[key], key, '', '', 'memory', _LC=LC)
-        # instructions.append(Instruction(backlog_literals[key], key, '', '', "memory", _LC=LC))
+        inst = Instruction(literals[key], '', key, '', 'memory', _LC=LC)
         literal_instructions.append(inst)
         LC += MEMORY_WIDTH
     
@@ -350,20 +353,17 @@ def output(fname="output.txt", *, opcode_numbers=False, labels_to_int=True):
     global LC, literal_instructions
 
     f = open(fname, 'w')
-    # literal_instructions: List[Instruction] = []
-    
+
+    # Reverse literals with key as label name 
+    # and values as list of literal value and pointer to instruction
     reverse_literals = {val[0]:[key, val[1]] for key,val in literals.items()}
-    # for key in literals:
-    #     inst = Instruction(literals[key], key, '', '', 'memory', _LC=LC)
-        # reverse_literals[literals[key]] = [reverse_literals[literals[key]], inst]
-        # literal_instructions.append(inst)
-    #     LC += MEMORY_WIDTH
 
     for inst in instructions:
         if inst.instruction_type == 'directive':
             if inst.opcode not in MEMORY_DIRECTIVES or inst.opcode == 'ltorg':
                 continue
-
+        
+        label = inst.label if inst.label else inst.LC
         opcode = inst.opcode
         op1 = inst.operand1
         op2 = inst.operand2
@@ -373,14 +373,17 @@ def output(fname="output.txt", *, opcode_numbers=False, labels_to_int=True):
         if opcode_numbers:
             opcode, op1, op2 = mnemonic_to_opcode(opcode, op1, op2)
         if labels_to_int:
+            label = inst.LC
+
             if op2 in labels:
                 op2 = labels[op2]
             elif op2 in reverse_literals:
                 op2 = reverse_literals[op2][1].LC
-
-        # print(opcode, op1, op2)
-
-        f.write(f"{inst.LC}: {opcode} {op1} {op2}\n")
+            
+        if inst.instruction_type == 'memory':
+            f.write(f"{label}:\t{op1} {op2}\n")
+        else:
+            f.write(f"{label}:\t{opcode} {op1} {op2}\n")
 
     f.close()
 
@@ -395,7 +398,7 @@ def error_or_execute():
 
     elif not ERROR_FOUND:
         print_instructions()
-        output(opcode_numbers=False)
+        output(opcode_numbers=False, labels_to_int=True)
 
 
 if __name__ == '__main__':
