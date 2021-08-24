@@ -76,6 +76,7 @@ def split(inst: str) -> List[str]:
         parts[0] += ':'
         parts.extend(backup)
 
+    parts = [part.strip() for part in parts]
     return parts
 
 
@@ -138,13 +139,16 @@ def directive_processor(parts: List[str], line: int) -> Instruction:
     
     elif p == 'ltorg':
         for key in backlog_literals:
-            instructions.append(Instruction(backlog_literals[key], key, '', '', "memory", _LC=LC))
+            inst = Instruction(backlog_literals[key], key, '', '', "memory", _LC=LC)
+            instructions.append(inst)
+            literal_instructions.append(inst)
+            backlog_literals[key] = [backlog_literals[key], inst]
             LC += MEMORY_WIDTH
         
         literals = literals | backlog_literals
         backlog_literals.clear()
 
-        return Instruction('', parts[0], '', '', "directive")
+        return Instruction('', parts[0], '', '', "directive", _LC=LC)
 
 
 
@@ -167,7 +171,6 @@ def parse(inst: str, line: int) -> Instruction:
             print(f"Redeclared the label `{label}` on line {line}")
             return None
 
-        # labels.add(label)
         labels[label] = LC
         parts = parts[1:]
 
@@ -256,6 +259,7 @@ backlog_labels: Dict[str, int] = {}
 
 literals: Dict[str, int] = {}
 backlog_literals: Dict[int, str] = {}
+literal_instructions: List[Instruction] = []
 literal_count = 0
 
 
@@ -300,11 +304,13 @@ def pass1() -> bool:
     In pass 2 we will just write the literals at bottom of code space in machine/intermediate code
 '''
 def pass2() -> bool:
-    global LC, literals
+    global LC, literals, literal_instructions
     all_good = True
 
     for key in backlog_literals:
-        instructions.append(Instruction(backlog_literals[key], key, '', '', "memory", _LC=LC))
+        inst = Instruction(literals[key], key, '', '', 'memory', _LC=LC)
+        # instructions.append(Instruction(backlog_literals[key], key, '', '', "memory", _LC=LC))
+        literal_instructions.append(inst)
         LC += MEMORY_WIDTH
     
     literals = literals | backlog_literals
@@ -340,12 +346,22 @@ def mnemonic_to_opcode(mnemo, operand1, operand2) -> tuple:
     return (mnemo, operand1, operand2)
 
 
-def output(fname="output.txt", *, opcodenumbers=False):
+def output(fname="output.txt", *, opcode_numbers=False, labels_to_int=True):
+    global LC, literal_instructions
+
     f = open(fname, 'w')
+    # literal_instructions: List[Instruction] = []
+    
+    reverse_literals = {val[0]:[key, val[1]] for key,val in literals.items()}
+    # for key in literals:
+    #     inst = Instruction(literals[key], key, '', '', 'memory', _LC=LC)
+        # reverse_literals[literals[key]] = [reverse_literals[literals[key]], inst]
+        # literal_instructions.append(inst)
+    #     LC += MEMORY_WIDTH
 
     for inst in instructions:
         if inst.instruction_type == 'directive':
-            if inst.opcode not in MEMORY_DIRECTIVES:
+            if inst.opcode not in MEMORY_DIRECTIVES or inst.opcode == 'ltorg':
                 continue
 
         opcode = inst.opcode
@@ -354,8 +370,13 @@ def output(fname="output.txt", *, opcodenumbers=False):
 
         if opcode in MEMORY_DIRECTIVES:
             opcode = ''
-        if opcodenumbers:
+        if opcode_numbers:
             opcode, op1, op2 = mnemonic_to_opcode(opcode, op1, op2)
+        if labels_to_int:
+            if op2 in labels:
+                op2 = labels[op2]
+            elif op2 in reverse_literals:
+                op2 = reverse_literals[op2][1].LC
 
         # print(opcode, op1, op2)
 
@@ -374,7 +395,7 @@ def error_or_execute():
 
     elif not ERROR_FOUND:
         print_instructions()
-        output(opcodenumbers=False)
+        output(opcode_numbers=False)
 
 
 if __name__ == '__main__':
