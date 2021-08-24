@@ -3,19 +3,21 @@ from typing import Dict, List
 import re
 
 # File Reading
-PATH = './'
-FILE_NAME = 'test3.asm'
-LC = 0
+# PATH = './'
+FILE_NAME = './test.asm'
+
 
 # Constants needed for parser
+LC = 0
+MEMORY_WIDTH = 1
 REGISTERS = {'areg': 0, 'breg': 1, 'creg': 2, 'dreg': 3, }
 
 # Set of all assembler directives
 # The tuple represents (opcode, size of instruction)
 MEMORY_DIRECTIVES = {'ds': (10, 2), 'dc': (11, 2)}
-DIRECTIVES = { 
-    'start': (0, 2), 
-    'end': (0, 1), 
+DIRECTIVES = {
+    'start': (0, 2),
+    'end': (0, 1),
     'org': (0, 2)
 } | MEMORY_DIRECTIVES
 
@@ -25,10 +27,10 @@ IO_INSTRUCTIONS = {'read': (1, 2), 'print': (2, 2)}
 DATA_TRANSFER_INSTRUCTIONS = {'movem': (3, 3), 'mover': (4, 3), 'mov': (0, 3)}
 
 ARITHMETIC_INSTRUCTIONS = {
-    'add': (5, 3), 
-    'sub': (6, 3), 
-    'mul': (7, 3), 
-    'div': (8, 3), 
+    'add': (5, 3),
+    'sub': (6, 3),
+    'mul': (7, 3),
+    'div': (8, 3),
     'cmp': (9, 3)
 }
 
@@ -50,20 +52,21 @@ ERROR_FOUND = False
 
 
 class Instruction:
-    def __init__(self, label, opcode, operand1, operand2, inst_type="mnemonic"):
+    def __init__(self, label: str, opcode: str, operand1: str, operand2: str,
+                    inst_type: str = "mnemonic", *, line: int = -1, _LC: int = -1):
         self.label = label
         self.opcode = opcode
         self.operand1 = operand1
         self.operand2 = operand2
         self.instruction_type = inst_type
-        self.line = -1  # stores line number for instruction in source code
-        self.LC = -1    # stores line counter for instruction in machine and intermediate code
+        self.line = line  # stores line number for instruction in source code
+        self.LC = _LC     # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
         return f"{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}"
 
 
-def split(inst: str) -> list:
+def split(inst: str) -> List[str]:
     parts = list(filter(lambda x: len(x) > 0, re.split(r'\s+|,', inst)))
 
     if ':' in parts[0] and parts[0][-1] != ':':
@@ -75,14 +78,16 @@ def split(inst: str) -> list:
 
     return parts
 
+
 def directive_processor(parts: List[str], line: int) -> Instruction:
-    global LC
+    global LC, ERROR_FOUND
     label, opcode, operand1, operand2 = "", "", "", ""
 
     p = parts[0].lower()
     if p == 'start':
         if len(parts) > 1:
             if not parts[1].isnumeric():
+                ERROR_FOUND = True
                 print(
                     f"On line {line} expected a number but got {type(parts[1])}")
                 return None
@@ -91,16 +96,17 @@ def directive_processor(parts: List[str], line: int) -> Instruction:
                 LC = int(parts[1])
         else:
             LC = 0
+        
+        return Instruction('', 'start', '', '', 'directive', _LC=0)
 
     elif p == 'end':
-        ins = Instruction(label, "end", operand1, operand2, "directive")
-        ins.LC = LC
-        return ins
+        return Instruction(label, "end", operand1, operand2, "directive", _LC=LC)
 
     elif p == 'org':
         if len(parts) < 2:
             ERROR_FOUND = True
             print(f"Expected one integer after `org` on line {line}")
+            return None
         else:
             LC = int(parts[1])
         ins = Instruction(
@@ -113,9 +119,8 @@ def directive_processor(parts: List[str], line: int) -> Instruction:
 
         for _ in range(times):
             ins = Instruction(
-                label, parts[0].lower(), 0, operand2, "memory")
-            ins.LC = LC
-            LC += 1
+                label, parts[0].lower(), 0, operand2, "memory", _LC=LC)
+            LC += MEMORY_WIDTH
             collection.append(ins)
         return collection
 
@@ -126,14 +131,16 @@ def directive_processor(parts: List[str], line: int) -> Instruction:
             operand2 = parts[2]
 
         ins = Instruction(
-            label, parts[0].lower(), operand1, operand2, "memory")
-        ins.LC = LC
+            label, parts[0].lower(), operand1, operand2, "memory", LC=LC)
+        # ins.LC = LC
         LC += DIRECTIVES[parts[0].lower()][1]
         return ins
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
+
+
 def parse(inst: str, line: int) -> Instruction:
-    global ERROR_FOUND, LC
+    global ERROR_FOUND, LC, literal_count
     label, opcode, operand1, operand2 = "", "", "", ""
 
     parts = split(inst)
@@ -198,32 +205,58 @@ def parse(inst: str, line: int) -> Instruction:
         return
 
     if len(parts) > 2:
-        if opcode in DATA_TRANSFER_INSTRUCTIONS:
-            if parts[2].isnumeric():
-                pass
+        if opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS:
+
+            # if second part is a literal
+            if parts[2].startswith("=") and parts[2][1:].isnumeric():
+                val = int(parts[2][1:])
+
+                # if the literal already exists in backlog
+                # then change operand2 to address of literal in instruction
+                if val in backlog_literals:
+                    ins = Instruction(label, opcode, operand1, backlog_literals[val][0], _LC=LC)
+                    LC += size
+                    return ins
+
+                literal_label = "LT" + str(literal_count).zfill(2)
+
+                # make sure label of literal doesnt collide with users labels
+                while literal_label in labels:
+                    literal_count += 1
+                    literal_label = "LT" + str(literal_count).zfill(2)
+
+                backlog_literals[val] = [literal_label]
+                literal_count += 1
+                operand2 = literal_label
+
             else:
                 backlog_labels[parts[2]] = (line, LC)
+        else:
+            operand2 = parts[2]
 
-        operand2 = parts[2]
-
-    ins = Instruction(label, opcode, operand1, operand2)
-    ins.LC = LC
+    ins = Instruction(label, opcode, operand1, operand2, _LC=LC)
     LC += size
     return ins
 
 
 instructions: List[Instruction] = []
+
 labels: Dict[str, int] = {}
 backlog_labels: Dict[str, int] = {}
 
+literals: Dict[str, int] = {}
+backlog_literals: Dict[str, int] = {}
+literal_count = 0
 
-def main():
+
+def pass1() -> bool:
     global ERROR_FOUND, LC
+    all_good = True
     i = 0
-    f = open(f'{PATH}{FILE_NAME}')
+    f = open(f'{FILE_NAME}')
 
     line = split(f.readline())
-    
+
     if line[0] == 'start' and len(line) == 2:
         LC = int(line[1])
 
@@ -236,7 +269,7 @@ def main():
 
         if comment_index > -1:
             line = line[:comment_index]
-        
+
         if len(line) > 0:
             ins = parse(line, i)
             if ins:
@@ -247,8 +280,22 @@ def main():
                 else:
                     ins.line = i  # + LC
                     instructions.append(ins)
+            else:
+                all_good = False
 
     f.close()
+    return all_good
+
+
+def pass2() -> bool:
+    global LC
+    all_good = True
+
+    for key in backlog_literals:
+        instructions.append(Instruction(backlog_literals[key][0], key, '', '', "mnemonic", _LC=LC))
+        LC += MEMORY_WIDTH
+
+    return all_good
 
 
 def print_instructions():
@@ -259,26 +306,24 @@ def print_instructions():
             print(ins)
 
 
-def mnemonic_to_opcode(opcode, operand1, operand2):
-    if opcode in MNEMONIC_TABLE:
-        opcode = MNEMONIC_TABLE[opcode][0]
-    elif opcode in DIRECTIVES:
-        opcode = DIRECTIVES[opcode][0]
+# This function ocnverts given parameters to their equivalent codes
+def mnemonic_to_opcode(mnemo, operand1, operand2) -> tuple:
+    if mnemo in MNEMONIC_TABLE:
+        mnemo = MNEMONIC_TABLE[mnemo][0]
+    elif mnemo in DIRECTIVES:
+        mnemo = DIRECTIVES[mnemo][0]
 
-    
-    if operand1 in labels or opcode in IO_INSTRUCTIONS:
+    if operand1 in labels or mnemo in IO_INSTRUCTIONS:
         operand1 = labels[operand1]
     elif operand1 in MNEMONIC_TABLE:
         operand1 = MNEMONIC_TABLE[operand1][0]
-    
-    
+
     if operand1 in REGISTERS:
         operand1 = REGISTERS[operand1]
     if operand2 and operand2 in labels:
         operand2 = labels[operand2]
 
-
-    return (opcode, operand1, operand2)
+    return (mnemo, operand1, operand2)
 
 
 def output(fname="output.txt", *, opcodenumbers=False):
@@ -319,5 +364,7 @@ def error_or_execute():
 
 
 if __name__ == '__main__':
-    main()
+    if not (pass1() and pass2()):
+        print("Something went wrong")
+
     error_or_execute()
