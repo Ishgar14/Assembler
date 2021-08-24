@@ -14,7 +14,7 @@ REGISTERS = {'areg': 0, 'breg': 1, 'creg': 2, 'dreg': 3, }
 
 # Set of all assembler directives
 # The tuple represents (opcode, size of instruction)
-MEMORY_DIRECTIVES = {'ds': (10, 2), 'dc': (11, 2)}
+MEMORY_DIRECTIVES = {'ds': (10, 2), 'dc': (11, 2), 'ltorg': (12, 1)}
 DIRECTIVES = {
     'start': (0, 2),
     'end': (0, 1),
@@ -80,7 +80,7 @@ def split(inst: str) -> List[str]:
 
 
 def directive_processor(parts: List[str], line: int) -> Instruction:
-    global LC, ERROR_FOUND
+    global LC, ERROR_FOUND, literals
     label, opcode, operand1, operand2 = "", "", "", ""
 
     p = parts[0].lower()
@@ -135,10 +135,18 @@ def directive_processor(parts: List[str], line: int) -> Instruction:
         # ins.LC = LC
         LC += DIRECTIVES[parts[0].lower()][1]
         return ins
+    
+    elif p == 'ltorg':
+        for key in backlog_literals:
+            instructions.append(Instruction(backlog_literals[key], key, '', '', "memory", _LC=LC))
+            LC += MEMORY_WIDTH
+        
+        literals = literals | backlog_literals
+        backlog_literals.clear()
+
+
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
-
-
 def parse(inst: str, line: int) -> Instruction:
     global ERROR_FOUND, LC, literal_count
     label, opcode, operand1, operand2 = "", "", "", ""
@@ -214,7 +222,7 @@ def parse(inst: str, line: int) -> Instruction:
                 # if the literal already exists in backlog
                 # then change operand2 to address of literal in instruction
                 if val in backlog_literals:
-                    ins = Instruction(label, opcode, operand1, backlog_literals[val][0], _LC=LC)
+                    ins = Instruction(label, opcode, operand1, backlog_literals[val], _LC=LC)
                     LC += size
                     return ins
 
@@ -225,7 +233,7 @@ def parse(inst: str, line: int) -> Instruction:
                     literal_count += 1
                     literal_label = "LT" + str(literal_count).zfill(2)
 
-                backlog_literals[val] = [literal_label]
+                backlog_literals[val] = literal_label
                 literal_count += 1
                 operand2 = literal_label
 
@@ -245,7 +253,7 @@ labels: Dict[str, int] = {}
 backlog_labels: Dict[str, int] = {}
 
 literals: Dict[str, int] = {}
-backlog_literals: Dict[str, int] = {}
+backlog_literals: Dict[int, str] = {}
 literal_count = 0
 
 
@@ -286,15 +294,19 @@ def pass1() -> bool:
     f.close()
     return all_good
 
-
+'''
+    In pass 2 we will just write the literals at bottom of code space in machine/intermediate code
+'''
 def pass2() -> bool:
-    global LC
+    global LC, literals
     all_good = True
 
     for key in backlog_literals:
-        instructions.append(Instruction(backlog_literals[key][0], key, '', '', "mnemonic", _LC=LC))
+        instructions.append(Instruction(backlog_literals[key], key, '', '', "memory", _LC=LC))
         LC += MEMORY_WIDTH
-
+    
+    literals = literals | backlog_literals
+    backlog_literals.clear()
     return all_good
 
 
@@ -302,7 +314,7 @@ def print_instructions():
     print("Label\tOpcode\tOperand1\tOperand2")
 
     for ins in instructions:
-        if ins.instruction_type == "mnemonic":
+        if ins.instruction_type != "directive":
             print(ins)
 
 
