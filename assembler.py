@@ -314,6 +314,7 @@ def pass1() -> bool:
     f.close()
     return all_good
 
+
 '''
     In pass 2 we will just write the literals at bottom of code space in machine/intermediate code
 '''
