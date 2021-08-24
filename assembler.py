@@ -50,14 +50,14 @@ ERROR_FOUND = False
 
 
 class Instruction:
-    def __init__(self, label, opcode, operand1, operand2, inst_type='mne'):
+    def __init__(self, label, opcode, operand1, operand2, inst_type="mnemonic"):
         self.label = label
         self.opcode = opcode
         self.operand1 = operand1
         self.operand2 = operand2
         self.instruction_type = inst_type
-        self.line = -1
-        self.LC = -1
+        self.line = -1  # stores line number for instruction in source code
+        self.LC = -1    # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
         return f"{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}"
@@ -75,9 +75,63 @@ def split(inst: str) -> list:
 
     return parts
 
+def directive_processor(parts: List[str], line: int) -> Instruction:
+    global LC
+    label, opcode, operand1, operand2 = "", "", "", ""
+
+    p = parts[0].lower()
+    if p == 'start':
+        if len(parts) > 1:
+            if not parts[1].isnumeric():
+                print(
+                    f"On line {line} expected a number but got {type(parts[1])}")
+                return None
+
+            else:
+                LC = int(parts[1])
+        else:
+            LC = 0
+
+    elif p == 'end':
+        ins = Instruction(label, "end", operand1, operand2, "directive")
+        ins.LC = LC
+        return ins
+
+    elif p == 'org':
+        if len(parts) < 2:
+            ERROR_FOUND = True
+            print(f"Expected one integer after `org` on line {line}")
+        else:
+            LC = int(parts[1])
+        ins = Instruction(
+            label, parts[0].lower(), operand1, operand2, "directive")
+        return ins
+
+    elif p == 'ds':
+        times = int(parts[1])
+        collection = []
+
+        for _ in range(times):
+            ins = Instruction(
+                label, parts[0].lower(), 0, operand2, "memory")
+            ins.LC = LC
+            LC += 1
+            collection.append(ins)
+        return collection
+
+    elif p == 'dc':
+        if len(parts) > 1:
+            operand1 = parts[1]
+        if len(parts) > 2:
+            operand2 = parts[2]
+
+        ins = Instruction(
+            label, parts[0].lower(), operand1, operand2, "memory")
+        ins.LC = LC
+        LC += DIRECTIVES[parts[0].lower()][1]
+        return ins
+
 # This function parses one instruction at a time and returns an object of class `Instruction`
-
-
 def parse(inst: str, line: int) -> Instruction:
     global ERROR_FOUND, LC
     label, opcode, operand1, operand2 = "", "", "", ""
@@ -102,51 +156,7 @@ def parse(inst: str, line: int) -> Instruction:
 
     # If first part is a assembler directive
     if parts[0].lower() in DIRECTIVES:
-        p = parts[0].lower()
-        if p == 'start':
-            if len(parts) > 1 and not parts[1].isnumeric:
-                print(
-                    f"On line {line} expected a number but got {type(parts[1])}")
-                return None
-
-        elif p == 'end':
-            ins = Instruction(label, "end", operand1, operand2, "directive")
-            ins.LC = LC
-            return ins
-
-        elif p == 'org':
-            if len(parts) < 2:
-                ERROR_FOUND = True
-                print(f"Expected one integer after `org` on line {line}")
-            else:
-                LC = int(parts[1])
-            ins = Instruction(
-                label, parts[0].lower(), operand1, operand2, "directive")
-            return ins
-
-        elif p == 'ds':
-            times = int(parts[1])
-            collection = []
-
-            for _ in range(times):
-                ins = Instruction(
-                    label, parts[0].lower(), 0, operand2, "memory")
-                ins.LC = LC
-                LC += 1
-                collection.append(ins)
-            return collection
-
-        elif p == 'dc':
-            if len(parts) > 1:
-                operand1 = parts[1]
-            if len(parts) > 2:
-                operand2 = parts[2]
-
-            ins = Instruction(
-                label, parts[0].lower(), operand1, operand2, "memory")
-            ins.LC = LC
-            LC += DIRECTIVES[parts[0].lower()][1]
-            return ins
+        return directive_processor(parts, line)
 
     # check for opcode
     if parts[0].lower() in MNEMONIC_TABLE:
@@ -245,7 +255,7 @@ def print_instructions():
     print("Label\tOpcode\tOperand1\tOperand2")
 
     for ins in instructions:
-        if ins.instruction_type == 'mne':
+        if ins.instruction_type == "mnemonic":
             print(ins)
 
 
