@@ -8,6 +8,7 @@ FILE_NAME = './test.asm'
 
 
 # Constants needed for parser
+MULTILINE_LABEL = ""
 LC = 0
 MEMORY_WIDTH = 1
 REGISTERS = {'areg': 0, 'breg': 1, 'creg': 2, 'dreg': 3, }
@@ -42,18 +43,18 @@ JUMP_INSTRUCTIONS = {
     'jmp': (10, 2), 'any': (11, 3)
 }
 
-MICELLANEOUS_INSTRUCTIONS = {'int': (0, 2), 'nop': (0, 1)}
+# MICELLANEOUS_INSTRUCTIONS = {'int': (0, 2), 'nop': (0, 1)}
 
 # The set of valid symbols
 MNEMONIC_TABLE = ARITHMETIC_INSTRUCTIONS | JUMP_INSTRUCTIONS | IO_INSTRUCTIONS  \
-    | DATA_TRANSFER_INSTRUCTIONS | MICELLANEOUS_INSTRUCTIONS
+    | DATA_TRANSFER_INSTRUCTIONS #| MICELLANEOUS_INSTRUCTIONS
 
 ERROR_FOUND = False
 
 
 class Instruction:
     def __init__(self, label: str, opcode: str, operand1: str, operand2: str,
-                    inst_type: str = "mnemonic", *, line: int = -1, _LC: int = -1):
+                    inst_type: str = 'mnemonic', *, line: int = -1, _LC: int = -1):
         self.label = label
         self.opcode = opcode
         self.operand1 = operand1
@@ -63,7 +64,7 @@ class Instruction:
         self.LC = _LC     # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
-        return f"{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}"
+        return f'{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}'
 
 
 def split(inst: str) -> List[str]:
@@ -80,9 +81,9 @@ def split(inst: str) -> List[str]:
     return parts
 
 
-def directive_processor(parts: List[str], line: int, label: str = "") -> Instruction:
+def directive_processor(parts: List[str], line: int, label: str = '') -> Instruction:
     global LC, ERROR_FOUND, literals
-    operand1, operand2 = "", ""
+    operand1, operand2 = '', ''
 
     p = parts[0].lower()
     if p == 'start':
@@ -90,7 +91,7 @@ def directive_processor(parts: List[str], line: int, label: str = "") -> Instruc
             if not parts[1].isnumeric():
                 ERROR_FOUND = True
                 print(
-                    f"On line {line} expected a number but got {type(parts[1])}")
+                    f'On line {line} expected a number but got {type(parts[1])}')
                 return None
 
             else:
@@ -101,30 +102,30 @@ def directive_processor(parts: List[str], line: int, label: str = "") -> Instruc
         return Instruction('', 'start', '', '', 'directive', _LC=0)
 
     elif p == 'end':
-        return Instruction(label, "end", operand1, operand2, "directive", _LC=LC)
+        return Instruction(label, 'end', operand1, operand2, 'directive', _LC=LC)
 
     elif p == 'org':
         if len(parts) < 2:
             ERROR_FOUND = True
-            print(f"Expected one integer after `org` on line {line}")
+            print(f'Expected one integer after `org` on line {line}')
             return None
         else:
             LC = int(parts[1])
         ins = Instruction(
-            label, parts[0].lower(), operand1, operand2, "directive")
+            label, parts[0].lower(), operand1, operand2, 'directive')
         return ins
 
     elif p == 'ds':
         times = int(parts[1])
         collection = []
 
-        ins = Instruction(label, parts[0].lower(), 0, operand2, "memory", _LC=LC)
+        ins = Instruction(label, parts[0].lower(), 0, operand2, 'memory', _LC=LC)
         LC += MEMORY_WIDTH
         collection.append(ins)
 
         for _ in range(times - 1):
             ins = Instruction(
-                '', parts[0].lower(), 0, operand2, "memory", _LC=LC)
+                '', parts[0].lower(), 0, operand2, 'memory', _LC=LC)
             LC += MEMORY_WIDTH
             collection.append(ins)
         return collection
@@ -136,14 +137,14 @@ def directive_processor(parts: List[str], line: int, label: str = "") -> Instruc
             operand2 = parts[2]
 
         ins = Instruction(
-            label, parts[0].lower(), operand1, operand2, "memory", LC=LC)
+            label, parts[0].lower(), operand1, operand2, 'memory', LC=LC)
         # ins.LC = LC
         LC += DIRECTIVES[parts[0].lower()][1]
         return ins
     
     elif p == 'ltorg':
         for key in backlog_literals:
-            inst = Instruction(backlog_literals[key], '', key, '', "memory", _LC=LC)
+            inst = Instruction(backlog_literals[key], 0, key, '', 'memory', _LC=LC)
             instructions.append(inst)
             literal_instructions.append(inst)
             backlog_literals[key] = [backlog_literals[key], inst]
@@ -152,14 +153,14 @@ def directive_processor(parts: List[str], line: int, label: str = "") -> Instruc
         literals = literals | backlog_literals
         backlog_literals.clear()
 
-        return Instruction('', parts[0], '', '', "directive", _LC=LC)
+        return Instruction('', parts[0], '', '', 'directive', _LC=LC)
 
 
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
-    global ERROR_FOUND, LC, literal_count
-    label, opcode, operand1, operand2 = "", "", "", ""
+    global ERROR_FOUND, LC, literal_count, MULTILINE_LABEL
+    label, opcode, operand1, operand2 = '', '', '', ''
 
     parts = split(inst)
 
@@ -172,11 +173,18 @@ def parse(inst: str, line: int) -> Instruction:
 
         if label in labels:
             ERROR_FOUND = True
-            print(f"Redeclared the label `{label}` on line {line}")
+            print(f'Redeclared the label `{label}` on line {line}')
             return None
 
         labels[label] = LC
         parts = parts[1:]
+
+    if len(parts) == 0:
+        MULTILINE_LABEL = label
+        return 'Empty'
+    if label == '' and len(MULTILINE_LABEL) > 0:
+        label = MULTILINE_LABEL
+        MULTILINE_LABEL = ''
 
     # If first part is a assembler directive
     if parts[0].lower() in DIRECTIVES:
@@ -190,13 +198,13 @@ def parse(inst: str, line: int) -> Instruction:
         if len(parts) != size:
             ERROR_FOUND = True
             print(
-                f"On line {line} `{inst.strip()}`\nExpected {size} tokens but got {len(parts)}")
+                f'On line {line} `{inst.strip()}`\nExpected {size} tokens but got {len(parts)}')
             return
 
     else:
         ERROR_FOUND = True
         print(
-            f"Unknown instruction `{parts[0]}` on line {line} in file '{FILE_NAME}'")
+            f'Unknown instruction `{parts[0]}` on line {line} in file "{FILE_NAME}"')
         return
 
     # Check for first operand
@@ -218,14 +226,14 @@ def parse(inst: str, line: int) -> Instruction:
 
     if opcode in DATA_TRANSFER_INSTRUCTIONS and operand1 not in REGISTERS:
         ERROR_FOUND = True
-        print(f"Illegal operand `{op1}` expected register")
+        print(f'Illegal operand `{op1}` expected register')
         return
 
     if len(parts) > 2:
         if opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS:
 
             # if second part is a literal
-            if parts[2].startswith("=") and parts[2][1:].isnumeric():
+            if parts[2].startswith('=') and parts[2][1:].isnumeric():
                 val = int(parts[2][1:])
 
                 # if the literal already exists in backlog
@@ -235,12 +243,12 @@ def parse(inst: str, line: int) -> Instruction:
                     LC += size
                     return ins
 
-                literal_label = "LT" + str(literal_count).zfill(2)
+                literal_label = 'LT' + str(literal_count).zfill(2)
 
                 # make sure label of literal doesnt collide with users labels
                 while literal_label in labels:
                     literal_count += 1
-                    literal_label = "LT" + str(literal_count).zfill(2)
+                    literal_label = 'LT' + str(literal_count).zfill(2)
 
                 backlog_literals[val] = literal_label
                 literal_count += 1
@@ -295,6 +303,8 @@ def pass1() -> bool:
                     for ii in ins:
                         ii.line = i
                         instructions.append(ii)
+                elif isinstance(ins, str):
+                    pass
                 else:
                     ins.line = i  # + LC
                     instructions.append(ins)
@@ -322,10 +332,10 @@ def pass2() -> bool:
 
 
 def print_instructions():
-    print("Label\tOpcode\tOperand1\tOperand2")
+    print('Label\tOpcode\tOperand1\tOperand2')
 
     for ins in instructions:
-        if ins.instruction_type != "directive":
+        if ins.instruction_type != 'directive':
             print(ins)
 
 
@@ -349,7 +359,7 @@ def mnemonic_to_opcode(mnemo, operand1, operand2) -> tuple:
     return (mnemo, operand1, operand2)
 
 
-def output(fname="output.txt", *, opcode_numbers=False, labels_to_int=True):
+def output(fname='output.txt', *, opcode_numbers=False, labels_to_int=True):
     global LC, literal_instructions
 
     f = open(fname, 'w')
@@ -381,9 +391,9 @@ def output(fname="output.txt", *, opcode_numbers=False, labels_to_int=True):
                 op2 = reverse_literals[op2][1].LC
             
         if inst.instruction_type == 'memory':
-            f.write(f"{label}:\t{op1} {op2}\n")
+            f.write(f'{label}:\t{op1} {op2}\n')
         else:
-            f.write(f"{label}:\t{opcode} {op1} {op2}\n")
+            f.write(f'{label}:\t{opcode} {op1} {op2}\n')
 
     f.close()
 
@@ -391,10 +401,10 @@ def output(fname="output.txt", *, opcode_numbers=False, labels_to_int=True):
 def error_or_execute():
     if backlog_labels:
         print(
-            f"Error: There are {len(backlog_labels)} undefined labels in source code")
+            f'Error: There are {len(backlog_labels)} undefined labels in source code')
         for back in backlog_labels:
             print(
-                f"In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code", end=' ')
+                f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code', end=' ')
 
     elif not ERROR_FOUND:
         print_instructions()
@@ -403,6 +413,6 @@ def error_or_execute():
 
 if __name__ == '__main__':
     if not (pass1() and pass2()):
-        print("Something went wrong")
+        print('Something went wrong')
 
     error_or_execute()
