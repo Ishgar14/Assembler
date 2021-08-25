@@ -3,7 +3,6 @@ from typing import Dict, List
 import re
 
 # File Reading
-# PATH = './'
 FILE_NAME = './test.asm'
 
 
@@ -15,7 +14,7 @@ REGISTERS = {'areg': 0, 'breg': 1, 'creg': 2, 'dreg': 3, }
 
 # Set of all assembler directives
 # The tuple represents (opcode, size of instruction)
-MEMORY_DIRECTIVES = {'ds': (10, 2), 'dc': (11, 2), 'ltorg': (12, 1)}
+MEMORY_DIRECTIVES = {'ds': (0, 2), 'dc': (0, 2), 'ltorg': (0, 1)}
 DIRECTIVES = {
     'start': (0, 2),
     'end': (0, 1),
@@ -25,7 +24,7 @@ DIRECTIVES = {
 
 IO_INSTRUCTIONS = {'read': (1, 2), 'print': (2, 2)}
 
-DATA_TRANSFER_INSTRUCTIONS = {'movem': (3, 3), 'mover': (4, 3), 'mov': (0, 3)}
+DATA_TRANSFER_INSTRUCTIONS = {'movem': (3, 3), 'mover': (4, 3)}
 
 ARITHMETIC_INSTRUCTIONS = {
     'add': (5, 3),
@@ -43,17 +42,16 @@ JUMP_INSTRUCTIONS = {
     'jmp': (10, 2), 'any': (11, 3)
 }
 
-# MICELLANEOUS_INSTRUCTIONS = {'int': (0, 2), 'nop': (0, 1)}
 
 # The set of valid symbols
 MNEMONIC_TABLE = ARITHMETIC_INSTRUCTIONS | JUMP_INSTRUCTIONS | IO_INSTRUCTIONS  \
-    | DATA_TRANSFER_INSTRUCTIONS #| MICELLANEOUS_INSTRUCTIONS
+    | DATA_TRANSFER_INSTRUCTIONS
 
 ERROR_FOUND = False
 
 
 class Instruction:
-    def __init__(self, label: str, opcode: str, operand1: str, operand2: str,
+    def __init__(self, label: str = "", opcode: str = "", operand1: str = "", operand2: str = "",
                     inst_type: str = 'mnemonic', *, line: int = -1, _LC: int = -1):
         self.label = label
         self.opcode = opcode
@@ -65,6 +63,18 @@ class Instruction:
 
     def __repr__(self) -> str:
         return f'{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}'
+
+
+instructions: List[Instruction] = []
+
+labels: Dict[str, int] = {}
+backlog_labels: Dict[str, int] = {}
+
+literals: Dict[str, int] = {}
+backlog_literals: Dict[int, str] = {}
+literal_instructions: List[Instruction] = []
+literal_count = 0
+
 
 ''' 
     This function takes a source code instruction as a string
@@ -84,6 +94,9 @@ def split(inst: str) -> List[str]:
     return parts
 
 
+'''
+    This function takes in a instruction then process the directive in it
+'''
 def directive_processor(parts: List[str], line: int, label: str = '') -> Instruction:
     global LC, ERROR_FOUND, literals
     operand1, operand2 = '', ''
@@ -102,7 +115,7 @@ def directive_processor(parts: List[str], line: int, label: str = '') -> Instruc
         else:
             LC = 0
         
-        return Instruction('', 'start', '', '', 'directive', _LC=0)
+        return Instruction(opcode='start', inst_type='directive', _LC=0)
 
     elif p == 'end':
         return Instruction(label, 'end', operand1, operand2, 'directive', _LC=LC)
@@ -140,8 +153,8 @@ def directive_processor(parts: List[str], line: int, label: str = '') -> Instruc
             operand2 = parts[2]
 
         ins = Instruction(
-            label, parts[0].lower(), operand1, operand2, 'memory', LC=LC)
-        # ins.LC = LC
+            label, parts[0].lower(), operand1, operand2, 'memory', _LC=LC)
+        
         LC += DIRECTIVES[parts[0].lower()][1]
         return ins
     
@@ -156,7 +169,7 @@ def directive_processor(parts: List[str], line: int, label: str = '') -> Instruc
         literals = literals | backlog_literals
         backlog_literals.clear()
 
-        return Instruction('', parts[0], '', '', 'directive', _LC=LC)
+        return Instruction(opcode=parts[0], inst_type='directive', _LC=LC)
 
 
 
@@ -267,16 +280,6 @@ def parse(inst: str, line: int) -> Instruction:
     return ins
 
 
-instructions: List[Instruction] = []
-
-labels: Dict[str, int] = {}
-backlog_labels: Dict[str, int] = {}
-
-literals: Dict[str, int] = {}
-backlog_literals: Dict[int, str] = {}
-literal_instructions: List[Instruction] = []
-literal_count = 0
-
 '''
     In pass1 we will read the source code line by line
     and convert it to intermediate code
@@ -293,7 +296,9 @@ def pass1() -> bool:
         LC = int(line[1])
 
     while line := f.readline():
-        if len(line.strip()) == 0:
+        line = line.strip()
+        
+        if len(line) == 0:
             continue
 
         i += 1
@@ -405,7 +410,11 @@ def output(fname='output.txt', *, opcode_numbers=False, labels_to_int=True) -> N
 
     f.close()
 
-
+'''
+    This function checks for possible errors and prints them on screen
+    If no errors are found then print the processed code in table format
+    and then write the intermediate code to output file
+'''
 def error_or_execute():
     if backlog_labels:
         print(
