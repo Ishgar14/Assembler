@@ -66,7 +66,10 @@ class Instruction:
     def __repr__(self) -> str:
         return f'{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}'
 
-
+''' 
+    This function takes a source code instruction as a string
+    and splits the instruction on whitespaces and returns a list of parts of instructions
+'''
 def split(inst: str) -> List[str]:
     parts = list(filter(lambda x: len(x) > 0, re.split(r'\s+|,', inst)))
 
@@ -274,7 +277,10 @@ backlog_literals: Dict[int, str] = {}
 literal_instructions: List[Instruction] = []
 literal_count = 0
 
-
+'''
+    In pass1 we will read the source code line by line
+    and convert it to intermediate code
+'''
 def pass1() -> bool:
     global ERROR_FOUND, LC
     all_good = True
@@ -340,7 +346,7 @@ def print_instructions():
             print(ins)
 
 
-# This function ocnverts given parameters to their equivalent codes
+# This function converts given parameters to their equivalent codes
 def mnemonic_to_opcode(mnemo, operand1, operand2) -> tuple:
     if mnemo in MNEMONIC_TABLE:
         mnemo = MNEMONIC_TABLE[mnemo][0]
@@ -360,7 +366,8 @@ def mnemonic_to_opcode(mnemo, operand1, operand2) -> tuple:
     return (mnemo, operand1, operand2)
 
 
-def output(fname='output.txt', *, opcode_numbers=False, labels_to_int=True):
+# This function writes the intermediate code to file
+def output(fname='output.txt', *, opcode_numbers=False, labels_to_int=True) -> None:
     global LC, literal_instructions
 
     f = open(fname, 'w')
