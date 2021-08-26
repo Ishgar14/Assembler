@@ -66,7 +66,7 @@ class Instruction:
 
     def __repr__(self) -> str:
         return f'{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}\t\t{self.instruction_type}' + \
-            f'\t{self.operand1_type}\t\t{self.operand2_type}'
+            f'\t{self.operand1_type}\t{self.operand2_type}'
 
 
 instructions: List[Instruction] = []
@@ -225,11 +225,12 @@ def parse(inst: str, line: int) -> Instruction:
         return
 
     if len(parts) > 2:
-        if opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS:
-            if parts[2] not in label:
+        operand2 = parts[2]
+        if opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS or opcode in JUMP_INSTRUCTIONS:
+            op2_type = 'label'
+
+            if parts[2] not in labels:
                 backlog_labels[parts[2]] = (line, LC)
-        else:
-            operand2 = parts[2]
     
     
 
@@ -286,7 +287,7 @@ def pass1() -> bool:
         elif inst.operand1 in REGISTERS:
             inst.operand1_type = 'register'
         elif inst.operand1 in JUMP_INSTRUCTIONS:
-            inst.operand1_type = 'jump'
+            inst.operand1_type = 'jump cond'
 
         if inst.operand2 in labels:
             inst.operand2_type = 'label'
