@@ -252,6 +252,7 @@ def pass1() -> bool:
     line = split(f.readline())
 
     if line[0] == 'start':
+        i = 1
         if len(line) == 2:
             LC = int(line[1])
             instructions.append(Instruction(opcode="start", operand1=LC, inst_type="directive", op1_type='literal'))
@@ -260,11 +261,11 @@ def pass1() -> bool:
 
     while line := f.readline():
         line = line.strip()
+        i += 1
 
         if len(line) == 0:
             continue
 
-        i += 1
 
         if len(line) > 0:
             ins = parse(line, i)
