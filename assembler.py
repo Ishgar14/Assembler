@@ -135,13 +135,13 @@ def directive_processor(parts: List[str], line: int, label: str = '') -> Instruc
         times = int(parts[1])
         collection = []
 
-        ins = Instruction(label, parts[0].lower(), 0, operand2, 'mem directive', op1_type='literal', _LC=LC)
+        ins = Instruction(label, parts[0].lower(), 0, operand2, 'directive', op1_type='literal', _LC=LC)
         LC += MEMORY_WIDTH
         collection.append(ins)
 
         for _ in range(times - 1):
             ins = Instruction(
-                '', parts[0].lower(), 0, operand2, 'mem directive', _LC=LC)
+                '', parts[0].lower(), 0, operand2, 'directive', _LC=LC)
             LC += MEMORY_WIDTH
             collection.append(ins)
         return collection
@@ -153,7 +153,7 @@ def directive_processor(parts: List[str], line: int, label: str = '') -> Instruc
             operand2 = parts[2]
 
         ins = Instruction(
-            label, parts[0].lower(), operand1, operand2, 'mem directive', op1_type='literal', _LC=LC)
+            label, parts[0].lower(), operand1, operand2, 'directive', op1_type='literal', _LC=LC)
         
         LC += DIRECTIVES[parts[0].lower()][1]
         return ins
@@ -163,7 +163,7 @@ def directive_processor(parts: List[str], line: int, label: str = '') -> Instruc
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
     global ERROR_FOUND, LC, literal_count
-    label, opcode, operand1, operand2, op1_type, op2_type = '', '', '', '', '', ''
+    label, opcode, operand1, operand2 = '', '', '', '',
     parts = split(inst)
 
     # if first component is a label
@@ -202,9 +202,9 @@ def parse(inst: str, line: int) -> Instruction:
             f'Unknown instruction `{parts[0]}` on line {line} in file "{FILE_NAME}"')
         return
 
-    # Check for first operand
+    # If first operand doesn't exist
     if len(parts) < 2:
-        ins = Instruction(label, opcode, operand1, operand2)
+        ins = Instruction(label, opcode)
         ins.LC = LC
         return ins
 
@@ -227,14 +227,11 @@ def parse(inst: str, line: int) -> Instruction:
     if len(parts) > 2:
         operand2 = parts[2]
         if opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS or opcode in JUMP_INSTRUCTIONS:
-            op2_type = 'label'
 
             if parts[2] not in labels:
-                backlog_labels[parts[2]] = (line, LC)
-    
-    
+                backlog_labels[parts[2]] = (line, LC)    
 
-    ins = Instruction(label, opcode, operand1, operand2, op1_type=op1_type, op2_type=op2_type, _LC=LC)
+    ins = Instruction(label, opcode, operand1, operand2, _LC=LC)
     LC += size
     return ins
 
@@ -266,21 +263,22 @@ def pass1() -> bool:
         if len(line) == 0:
             continue
 
-
         if len(line) > 0:
             ins = parse(line, i)
-            if ins:
-                if isinstance(ins, list):
-                    for ii in ins:
-                        ii.line = i
-                        instructions.append(ii)
-                elif isinstance(ins, str):
-                    pass
-                else:
-                    ins.line = i  # + LC
-                    instructions.append(ins)
-            else:
+
+            if not ins:
                 all_good = False
+                continue
+
+            if isinstance(ins, list):
+                for ii in ins:
+                    ii.line = i
+                    instructions.append(ii)
+            elif isinstance(ins, str):
+                pass
+            else:
+                ins.line = i  # + LC
+                instructions.append(ins)
 
     for inst in instructions:
         if inst.operand1 in labels:
@@ -299,18 +297,15 @@ def pass1() -> bool:
 
 def print_instructions():
     print('Label\tOpcode\tOperand1\tOperand2\tInst Type\tOperand1 Type\tOperand2 Type')
-
     for ins in instructions:
         print(ins)
 
 
 def error_or_execute():
     if backlog_labels:
-        print(
-            f'Error: There are {len(backlog_labels)} undefined labels in source code')
+        print(f'Error: There are {len(backlog_labels)} undefined labels in source code')
         for back in backlog_labels:
-            print(
-                f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code', end=' ')
+            print(f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code', end=' ')
 
     elif not ERROR_FOUND:
         print_instructions()
