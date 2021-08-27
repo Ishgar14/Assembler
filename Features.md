@@ -6,12 +6,15 @@ For example
 
     start
     
-    mover creg, =1
-    repeat:add creg, =1
+    mover creg, one
+    repeat:add creg, one
 
-    cmp creg, =5
+    cmp creg, five
     bc jle repeat
 
+    one: 1
+    five: 5
+    
     end
 
 is a valid program
