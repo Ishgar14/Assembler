@@ -219,9 +219,9 @@ def parse(inst: str, line: int) -> Instruction:
     else:
         operand1 = op1.lower()
 
-    if opcode in DATA_TRANSFER_INSTRUCTIONS and operand1 not in REGISTERS:
+    if (opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS) and operand1 not in REGISTERS:
         ERROR_FOUND = True
-        print(f'Illegal operand `{op1}` expected register')
+        print(f'On line {line} found illegal operand `{op1}` expected register')
         return
 
     if len(parts) > 2:
