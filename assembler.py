@@ -227,8 +227,12 @@ def parse(inst: str, line: int) -> Instruction:
     if len(parts) > 2:
         operand2 = parts[2]
         if opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS or opcode in JUMP_INSTRUCTIONS:
-
-            if parts[2] not in labels:
+            
+            if parts[2].lower() in REGISTERS:
+                ERROR_FOUND = True
+                print(f"On line {line} expected label but got register `{parts[2]}`")
+                return 
+            elif parts[2] not in labels:
                 backlog_labels[parts[2]] = (line, LC)    
 
     ins = Instruction(label, opcode, operand1, operand2, _LC=LC)
