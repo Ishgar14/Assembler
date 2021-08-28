@@ -1,10 +1,8 @@
 from typing import Dict, List
-
 import re
 
 # File Reading
 FILE_NAME = './ass1.asm'
-
 
 # Constants needed for parser
 LC = 0
@@ -25,13 +23,7 @@ IO_INSTRUCTIONS = {'read': (1, 2), 'print': (2, 2)}
 
 DATA_TRANSFER_INSTRUCTIONS = {'movem': (3, 3), 'mover': (4, 3)}
 
-ARITHMETIC_INSTRUCTIONS = {
-    'add': (5, 3),
-    'sub': (6, 3),
-    'mul': (7, 3),
-    'div': (8, 3),
-    'cmp': (9, 3)
-}
+ARITHMETIC_INSTRUCTIONS = { 'add': (5, 3), 'sub': (6, 3), 'mul': (7, 3), 'div': (8, 3), 'cmp': (9, 3)}
 
 JUMP_INSTRUCTIONS = {
     'bc': (10, 3),
@@ -65,7 +57,7 @@ class Instruction:
         self.LC = _LC     # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
-        return f'{self.label}\t{self.opcode}\t{self.operand1}\t\t{self.operand2}\t\t{self.instruction_type}' + \
+        return f'{self.LC}\t{self.label}\t{self.opcode}\t\t{self.operand1}\t\t{self.operand2}\t\t{self.instruction_type}' + \
             f'\t{self.operand1_type}\t{self.operand2_type}'
 
 
@@ -75,96 +67,11 @@ labels: Dict[str, int] = {}
 backlog_labels: Dict[str, int] = {}
 
 
-''' 
-    This function takes a source code instruction as a string
-    and splits the instruction on whitespaces and returns a list of parts of instructions
-'''
-def split(inst: str) -> List[str]:
-    parts = list(filter(lambda x: len(x) > 0, re.split(r'\s+|,', inst)))
-
-    if ':' in parts[0] and parts[0][-1] != ':':
-        # properly break the instruction into parts
-        backup = parts[1:]
-        parts = parts[0].split(':')
-        parts[0] += ':'
-        parts.extend(backup)
-
-    parts = [part.strip() for part in parts]
-    return parts
-
-
-'''
-    This function takes in a instruction then process the directive in it
-'''
-def directive_processor(parts: List[str], line: int, label: str = '') -> Instruction:
-    global LC, ERROR_FOUND, literals
-    operand1, operand2, op1_type = '', '', ''
-
-    p = parts[0].lower()
-    if p == 'start':
-        if len(parts) > 1:
-            if not parts[1].isnumeric():
-                ERROR_FOUND = True
-                print(
-                    f'On line {line} expected a number but got {type(parts[1])}')
-                return None
-
-            else:
-                LC = int(parts[1])
-                op1_type = 'literal'
-        else:
-            LC = 0
-        
-        return Instruction(opcode='start', inst_type='directive', op1_type=op1_type, _LC=0)
-
-    elif p == 'end':
-        return Instruction(label, 'end', operand1, operand2, 'directive', _LC=LC)
-
-    elif p == 'org':
-        if len(parts) < 2:
-            ERROR_FOUND = True
-            print(f'Expected one integer after `org` on line {line}')
-            return None
-        else:
-            LC = int(parts[1])
-        ins = Instruction(
-            label, parts[0].lower(), operand1, operand2, 'directive', op1_type='literal')
-        return ins
-
-    elif p == 'ds':
-        times = int(parts[1])
-        collection = []
-
-        ins = Instruction(label, parts[0].lower(), 0, operand2, 'directive', op1_type='literal', _LC=LC)
-        LC += MEMORY_WIDTH
-        collection.append(ins)
-
-        for _ in range(times - 1):
-            ins = Instruction(
-                '', parts[0].lower(), 0, operand2, 'directive', _LC=LC)
-            LC += MEMORY_WIDTH
-            collection.append(ins)
-        return collection
-
-    elif p == 'dc':
-        if len(parts) > 1:
-            operand1 = parts[1]
-        if len(parts) > 2:
-            operand2 = parts[2]
-
-        ins = Instruction(
-            label, parts[0].lower(), operand1, operand2, 'directive', op1_type='literal', _LC=LC)
-        
-        LC += DIRECTIVES[parts[0].lower()][1]
-        return ins
-
-
-
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
     global ERROR_FOUND, LC, literal_count
-    label, opcode, operand1, operand2 = '', '', '', '',
-    parts = split(inst)
+    label, opcode, operand1, operand2, inst_type = '', '', '', '', 'mnemonic'
+    parts = re.split(r'\s+', inst)
 
     # if first component is a label
     if parts[0][-1] == ':':
@@ -183,41 +90,33 @@ def parse(inst: str, line: int) -> Instruction:
 
     # If first part is an assembler directive
     if parts[0].lower() in DIRECTIVES:
-        return directive_processor(parts, line, label)
+        inst_type = 'directive'
+        opcode = parts[0].lower()
 
     # check for opcode
-    if parts[0].lower() in MNEMONIC_TABLE:
+    elif parts[0].lower() in MNEMONIC_TABLE:
         opcode = parts[0]
         size = MNEMONIC_TABLE[parts[0].lower()][1]
 
         if len(parts) != size:
             ERROR_FOUND = True
-            print(
-                f'On line {line} `{inst.strip()}`\nExpected {size} tokens but got {len(parts)}')
+            print(f'On line {line} `{inst.strip()}`\nExpected {size} tokens but got {len(parts)}')
             return
 
     else:
         ERROR_FOUND = True
-        print(
-            f'Unknown instruction `{parts[0]}` on line {line} in file "{FILE_NAME}"')
+        print(f'Unknown instruction `{parts[0]}` on line {line} in file "{FILE_NAME}"')
         return
 
     # If first operand doesn't exist
     if len(parts) < 2:
-        ins = Instruction(label, opcode)
-        ins.LC = LC
-        return ins
+        return Instruction(label, opcode, _LC=LC)
 
     op1 = parts[1]
 
     # The comma is optional
-    if op1[-1] == ',':
-        op1 = op1[:-1]
-
-    if opcode in IO_INSTRUCTIONS:
-        operand1 = op1
-    else:
-        operand1 = op1.lower()
+    if op1[-1] == ',':op1 = op1[:-1]
+    operand1 = op1
 
     if (opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS) and operand1 not in REGISTERS:
         ERROR_FOUND = True
@@ -227,16 +126,16 @@ def parse(inst: str, line: int) -> Instruction:
     if len(parts) > 2:
         operand2 = parts[2]
         if opcode in DATA_TRANSFER_INSTRUCTIONS or opcode in ARITHMETIC_INSTRUCTIONS or opcode in JUMP_INSTRUCTIONS:
-            
-            if parts[2].lower() in REGISTERS:
-                ERROR_FOUND = True
-                print(f"On line {line} expected label but got register `{parts[2]}`")
-                return 
-            elif parts[2] not in labels:
+            if parts[2] not in labels:
                 backlog_labels[parts[2]] = (line, LC)    
 
-    ins = Instruction(label, opcode, operand1, operand2, _LC=LC)
-    LC += size
+    ins = Instruction(label, opcode, operand1, operand2, inst_type=inst_type, _LC=LC, line=line)
+
+    if inst_type != 'directive':
+        LC += size
+    elif opcode in {'ds', 'dc'}:
+        LC += MEMORY_WIDTH
+
     return ins
 
 
@@ -246,43 +145,27 @@ def parse(inst: str, line: int) -> Instruction:
 '''
 def pass1() -> bool:
     global ERROR_FOUND, LC
-    all_good = True
     i = 0
     f = open(f'{FILE_NAME}')
-
-    line = split(f.readline())
+    line = [l for l in re.split(r'\s+', f.readline()) if len(l) > 0]
 
     if line[0] == 'start':
         i = 1
         if len(line) == 2:
             LC = int(line[1])
-            instructions.append(Instruction(opcode="start", operand1=LC, inst_type="directive", op1_type='literal'))
+            instructions.append(Instruction(opcode="start", operand1=LC, inst_type="directive", op1_type='constant', _LC=LC, line=i))
         else:
-            instructions.append(Instruction(opcode="start", inst_type="directive"))
+            instructions.append(Instruction(opcode="start", inst_type="directive", _LC=LC, line=i))
 
     while line := f.readline():
         line = line.strip()
         i += 1
-
-        if len(line) == 0:
-            continue
-
         if len(line) > 0:
             ins = parse(line, i)
-
             if not ins:
-                all_good = False
                 continue
 
-            if isinstance(ins, list):
-                for ii in ins:
-                    ii.line = i
-                    instructions.append(ii)
-            elif isinstance(ins, str):
-                pass
-            else:
-                ins.line = i  # + LC
-                instructions.append(ins)
+            instructions.append(ins)
 
     for inst in instructions:
         if inst.operand1 in labels:
@@ -296,13 +179,19 @@ def pass1() -> bool:
             inst.operand2_type = 'label'
 
     f.close()
-    return all_good
 
 
-def print_instructions():
-    print('Label\tOpcode\tOperand1\tOperand2\tInst Type\tOperand1 Type\tOperand2 Type')
+def print_IC():
+    print("------------------------Intermediate Code-------------------------")
+    print('LC\tLabel\tMnemonic\tOperand1\tOperand2\tInst Type\tOperand1 Type\tOperand2 Type')
     for ins in instructions:
         print(ins)
+
+def print_symbols():
+    print("-------------------------Symbol Table----------------------------")
+    print("Label Name\tLine Count")
+    for key, val in labels.items():
+        print(f"{key}\t\t{val}")
 
 
 def error_or_execute():
@@ -312,11 +201,10 @@ def error_or_execute():
             print(f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code', end=' ')
 
     elif not ERROR_FOUND:
-        print_instructions()
+        print_IC()
+        print_symbols()
 
 
 if __name__ == '__main__':
-    if not pass1():
-        print('Something went wrong')
-
+    pass1()
     error_or_execute()
