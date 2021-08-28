@@ -12,8 +12,8 @@ For example
     cmp creg, five
     bc jle repeat
 
-    one: 1
-    five: 5
+    one: dc 1
+    five: dc 5
     
     end
 
