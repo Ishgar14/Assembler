@@ -42,11 +42,11 @@ ERROR_FOUND = False
 
 
 class Instruction:
-    def __init__(self, label: str = "", opcode: str = "", operand1: str = "", operand2: str = "",
+    def __init__(self, label: str = "", mnemonic: str = "", operand1: str = "", operand2: str = "",
                     inst_type: str = 'mnemonic', op1_type='', op2_type='', *,
                     line: int = -1, _LC: int = -1):
         self.label = label
-        self.opcode = opcode
+        self.mnemonic = mnemonic
         self.operand1 = operand1
         self.operand2 = operand2
 
@@ -57,7 +57,7 @@ class Instruction:
         self.LC = _LC     # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
-        return f'{self.LC}\t{self.label}\t{self.opcode}\t\t{self.operand1}\t\t{self.operand2}\t\t{self.instruction_type}' + \
+        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t{self.instruction_type}' + \
             f'\t{self.operand1_type}\t{self.operand2_type}'
 
 
@@ -153,9 +153,9 @@ def pass1() -> bool:
         i = 1
         if len(line) == 2:
             LC = int(line[1])
-            instructions.append(Instruction(opcode="start", operand1=LC, inst_type="directive", op1_type='constant', _LC=LC, line=i))
+            instructions.append(Instruction(mnemonic="start", operand1=LC, inst_type="directive", op1_type='constant', _LC=LC, line=i))
         else:
-            instructions.append(Instruction(opcode="start", inst_type="directive", _LC=LC, line=i))
+            instructions.append(Instruction(mnemonic="start", inst_type="directive", _LC=LC, line=i))
 
     while line := f.readline():
         line = line.strip()
