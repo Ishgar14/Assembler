@@ -174,6 +174,8 @@ def pass1() -> bool:
             inst.operand1_type = 'register'
         elif inst.operand1 in JUMP_INSTRUCTIONS:
             inst.operand1_type = 'jump cond'
+        elif str(inst.operand1).isnumeric():
+            inst.operand1_type = 'constant'
 
         if inst.operand2 in labels:
             inst.operand2_type = 'label'
