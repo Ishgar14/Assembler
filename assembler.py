@@ -110,7 +110,7 @@ def parse(inst: str, line: int) -> Instruction:
 
     # If first operand doesn't exist
     if len(parts) < 2:
-        return Instruction(label, opcode, _LC=LC)
+        return Instruction(label, opcode, operand1, operand2, _LC=LC, inst_type=inst_type)
 
     op1 = parts[1]
 
