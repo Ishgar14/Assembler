@@ -90,7 +90,7 @@ def parse(inst: str, line: int) -> Instruction:
 
     # If first part is an assembler directive
     if parts[0].lower() in DIRECTIVES:
-        inst_type = 'directive'
+        inst_type = 'declarative' if parts[0].lower() in {'dc', 'ds'} else 'directive'
         opcode = parts[0].lower()
 
     # check for opcode
@@ -131,7 +131,7 @@ def parse(inst: str, line: int) -> Instruction:
 
     ins = Instruction(label, opcode, operand1, operand2, inst_type=inst_type, _LC=LC, line=line)
 
-    if inst_type != 'directive':
+    if inst_type == 'mnemonic':
         LC += size
     elif opcode in {'ds', 'dc'}:
         LC += MEMORY_WIDTH
