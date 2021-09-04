@@ -91,13 +91,11 @@ def parse(inst: str, line: int) -> Instruction:
         if label in backlog_labels:
             del backlog_labels[label]
 
-        # if label in [lab[0] for lab in labels]:
         if label in label_names(labels):
             ERROR_FOUND = True
             print(f'Redeclared the label `{label}` on line {line}')
             return None
 
-        # labels[label] = LC
         labels.append([label, LC])
         parts = parts[1:]
 
@@ -136,15 +134,14 @@ def parse(inst: str, line: int) -> Instruction:
     if op1[-1] == ',':op1 = op1[:-1]
     operand1 = op1
 
-    if (mnemo in DATA_TRANSFER_INSTRUCTIONS or mnemo in ARITHMETIC_INSTRUCTIONS) and operand1 not in REGISTERS:
+    if (mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS) and operand1 not in REGISTERS:
         ERROR_FOUND = True
         print(f'On line {line} found illegal operand `{op1}` expected register')
         return
 
     if len(parts) > 2:
         operand2 = parts[2]
-        if mnemo in DATA_TRANSFER_INSTRUCTIONS or mnemo in ARITHMETIC_INSTRUCTIONS or mnemo in JUMP_INSTRUCTIONS:
-            # if parts[2] not in [lab[0] for lab in labels]:
+        if mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS |  JUMP_INSTRUCTIONS:
             if parts[2] not in label_names(labels):
                 backlog_labels[parts[2]] = (line, LC)    
 
@@ -191,7 +188,7 @@ def pass1() -> bool:
             instructions.append(ins)
 
     label_dict = {lab[0]: lab[1] for lab in labels}
-    label_name_list = [lab[0] for lab in labels]
+    label_name_list = label_names(labels)
 
     for inst in instructions:
         if inst.operand1 in label_dict:
@@ -204,9 +201,7 @@ def pass1() -> bool:
             inst.operand1_type = ('C ' + str(inst.operand1)).center(10)
 
         if inst.operand2 in label_dict:
-            # inst.operand2_type = ('S ' + str(labels[inst.operand2])).center(10)
             inst.operand2_type = ('S ' + str(label_name_list.index(inst.operand2))).center(10)
-            pass
 
     f.close()
 
