@@ -77,14 +77,34 @@ labels: List[Tuple[str, int]] = []
 backlog_labels: Dict[str, int] = {}
 
 pool: List[int] = []
-literals: List[Tuple[str, int]] = []
-literal_dict: Dict[int, str] = {}
+pool_counter: int = 0
+literals: List[Tuple[str, int, int]] = []
+literal_dict: Dict[int, Tuple[str, int]] = {}
 
 label_names = lambda lab: set(lab[0] for lab in labels)
 
+def inlay_literals():
+    global LC, pool_counter, instructions
+
+    if pool_counter > 0:
+        # sea = literals[pool[pool_counter] : pool[pool_counter] + 1]
+        sea = literals[pool[pool_counter - 1]:]
+    else:
+        # sea = literals[:pool[pool_counter] + 1]
+        sea = literals
+
+
+    for fish in sea:
+        instructions.append(Instruction(fish[0], 'dc', fish[1], _LC=LC, inst_type='DL ' + str(DIRECTIVES['dc'][0]), op1_type='C ' + str(fish[1])))
+        literals[literals.index(fish)] = (fish[0], fish[1], LC)
+        literal_dict[fish[1]] = (literal_dict[fish[1]][0], LC)
+        LC += MEMORY_WIDTH
+
+    pool_counter += 1
+
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
-    global ERROR_FOUND, LC, literal_count
+    global ERROR_FOUND, LC, literal_count, pool_counter
     label, mnemo, operand1, operand2, inst_type = '', '', '', '', 'IS'
     parts = re.split(r'\s+', inst)
 
@@ -109,7 +129,12 @@ def parse(inst: str, line: int) -> Instruction:
         if key in DECLARATIVES:
             inst_type = ('DL ' + str(DECLARATIVES[key][0]))
         else:
-            if key == 'ltorg': pool.append(len(literals) - 1)
+            if key == 'ltorg': 
+                # pool.append(len(literals) - 1)
+                pool.append(pool_counter)
+                inlay_literals()
+                pool_counter = len(literals) - 1
+                return
             elif key == 'org': LC = int(parts[1])
             inst_type = ('AD ' + str(DIRECTIVES[key][0]))
         mnemo = key
@@ -153,8 +178,8 @@ def parse(inst: str, line: int) -> Instruction:
                     literal_label = 'LT' + str(len(literals)).zfill(2)
                     value = int(operand2[1:])
 
-                    literals.append((literal_label, value))
-                    literal_dict[value] = literal_label
+                    literals.append((literal_label, value, -1))
+                    literal_dict[value] = (literal_label, -1)
 
             elif operand2 not in label_names(labels) and operand2 not in REGISTERS:
                 backlog_labels[operand2] = (line, LC)    
@@ -218,14 +243,15 @@ def pass1() -> bool:
             inst.operand2_type = ('S ' + str(label_name_list.index(inst.operand2)))
         elif inst.operand2.startswith('='):
             val = int(inst.operand2[1:])
-            inst.operand2 = literal_dict[val]
-            inst.operand2_type = ('L ' + str(literals.index((inst.operand2, val))))
+            inst.operand2 = literal_dict[val][0]
+            inst.operand2_type = ('L ' + str(literals.index((inst.operand2, val, literal_dict[val][1]))))
         elif inst.operand2 in REGISTERS:
             inst.operand2_type = ('R ' + str(REGISTERS[inst.operand2]))
 
 
     f.close()
     pool.append(len(literals) - 1)
+    inlay_literals()
 
 
 def print_IC():
@@ -243,9 +269,9 @@ def print_symbols():
 
 def print_literals():
     print("------------------------Literal Table----------------------------")
-    print("Index\tLabel Name\tValue")
-    for index, (name, value) in enumerate(literals):
-        print(f"{index}\t{name}\t\t{value}")
+    print("Index\tLabel Name\tValue\tLC")
+    for index, (name, value, linecount) in enumerate(literals):
+        print(f"{index}\t{name}\t\t{value}\t{linecount if linecount != -1 else ''}")
 
 def print_pool():
     print("-------------------------Pool Table------------------------------")
