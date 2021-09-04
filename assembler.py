@@ -63,12 +63,12 @@ class Instruction:
         self.LC = _LC     # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
-        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t{self.instruction_type}' + \
-            f'\t{self.operand1_type}\t{self.operand2_type}'
+        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t'# + \
+            #f'\t{self.operand1_type}\t{self.operand2_type}'
 
     def interm(self) -> str:
-        return f'{self.LC}\t{self.instruction_type}' + \
-            f'\t{self.operand1_type}\t{self.operand2_type}'
+        return f'{self.instruction_type}' + \
+            f' {self.operand1_type} {self.operand2_type}'
 
 
 instructions: List[Instruction] = []
@@ -103,15 +103,15 @@ def parse(inst: str, line: int) -> Instruction:
     if parts[0].lower() in DIRECTIVES:
         key = parts[0].lower()
         if parts[0].lower() in {'dc', 'ds'}:
-            inst_type = ('DL ' + str(DECLARATIVES[key][0])).center(10)
+            inst_type = ('DL ' + str(DECLARATIVES[key][0]))
         else:
-            inst_type = ('AD ' + str(DIRECTIVES[key][0])).center(10)
+            inst_type = ('AD ' + str(DIRECTIVES[key][0]))
         mnemo = parts[0].lower()
 
     # check for opcode
     elif parts[0].lower() in MNEMONIC_TABLE:
         mnemo = parts[0].lower()
-        inst_type = ('IS ' + str(MNEMONIC_TABLE[mnemo][0])).center(10)
+        inst_type = ('IS ' + str(MNEMONIC_TABLE[mnemo][0]))
         size = MNEMONIC_TABLE[mnemo][1]
 
         if len(parts) != size:
@@ -170,7 +170,7 @@ def pass1() -> bool:
 
     if line[0] == 'start':
         i = 1
-        inst_type = ('AD ' + str(DIRECTIVES['start'][0])).center(10)
+        inst_type = ('AD ' + str(DIRECTIVES['start'][0]))
         if len(line) == 2:
             LC = int(line[1])
             instructions.append(Instruction(mnemonic="start", operand1=LC, inst_type=inst_type, _LC=LC, line=i))
@@ -192,26 +192,26 @@ def pass1() -> bool:
 
     for inst in instructions:
         if inst.operand1 in label_dict:
-            inst.operand1_type = ('S ' + str(label_name_list.index(inst.operand1))).center(10)
+            inst.operand1_type = ('S ' + str(label_name_list.index(inst.operand1)))
         elif inst.operand1 in REGISTERS:
-            inst.operand1_type = ('Reg ' + str(REGISTERS[inst.operand1])).center(10)
+            inst.operand1_type = ('R ' + str(REGISTERS[inst.operand1]))
         elif inst.operand1 in JUMP_CONDITIONS:
-            inst.operand1_type = ('CD ' + str(JUMP_CONDITIONS[inst.operand1])).center(10)
+            inst.operand1_type = ('CD ' + str(JUMP_CONDITIONS[inst.operand1]))
         elif str(inst.operand1).isnumeric():
-            inst.operand1_type = ('C ' + str(inst.operand1)).center(10)
+            inst.operand1_type = ('C ' + str(inst.operand1))
 
         if inst.operand2 in label_dict:
-            inst.operand2_type = ('S ' + str(label_name_list.index(inst.operand2))).center(10)
+            inst.operand2_type = ('S ' + str(label_name_list.index(inst.operand2)))
 
     f.close()
 
 
 def print_IC():
     print("------------------------Intermediate Code-------------------------")
-    # print('LC\tLabel\tMnemonic\tOperand1\tOperand2\tInst Type\tOperand1 Type\tOperand2 Type')
-    print('LC\tInst Type\tOperand1 Type\tOperand2 Type')
+    print('LC\tLabel\tMnemonic\tOperand1\tOperand2\t\tIC', end='\n\n')
+    # print('LC\tInst Type\tOperand1 Type\tOperand2 Type')
     for ins in instructions:
-        print(ins.interm())
+        print(ins, ins.interm())
 
 def print_symbols():
     print("-------------------------Symbol Table----------------------------")
