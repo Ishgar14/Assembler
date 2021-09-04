@@ -188,7 +188,7 @@ def pass1() -> bool:
             instructions.append(ins)
 
     label_dict = {lab[0]: lab[1] for lab in labels}
-    label_name_list = label_names(labels)
+    label_name_list = [lab[0] for lab in labels]
 
     for inst in instructions:
         if inst.operand1 in label_dict:
