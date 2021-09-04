@@ -2,7 +2,7 @@ from typing import Dict, List, Tuple
 import re
 
 # File Reading
-FILE_NAME = './ass1.asm'
+FILE_NAME = './ass2.asm'
 
 # Constants needed for parser
 LC = 0
@@ -49,7 +49,7 @@ ERROR_FOUND = False
 
 class Instruction:
     def __init__(self, label: str = "", mnemonic: str = "", operand1: str = "", operand2: str = "",
-                    inst_type: str = 'mnemonic', op1_type='', op2_type='', *,
+                    inst_type: str = 'IS', op1_type='', op2_type='', *,
                     line: int = -1, _LC: int = -1):
         self.label = label
         self.mnemonic = mnemonic
@@ -76,12 +76,16 @@ instructions: List[Instruction] = []
 labels: List[Tuple[str, int]] = []
 backlog_labels: Dict[str, int] = {}
 
+pool: List[int] = []
+literals: List[Tuple[str, int]] = []
+literal_dict: Dict[int, str] = {}
+
 label_names = lambda lab: set(lab[0] for lab in labels)
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
     global ERROR_FOUND, LC, literal_count
-    label, mnemo, operand1, operand2, inst_type = '', '', '', '', 'mnemonic'
+    label, mnemo, operand1, operand2, inst_type = '', '', '', '', 'IS'
     parts = re.split(r'\s+', inst)
 
     # if first component is a label
@@ -102,11 +106,13 @@ def parse(inst: str, line: int) -> Instruction:
     # If first part is an assembler directive
     if parts[0].lower() in DIRECTIVES:
         key = parts[0].lower()
-        if parts[0].lower() in {'dc', 'ds'}:
+        if key in DECLARATIVES:
             inst_type = ('DL ' + str(DECLARATIVES[key][0]))
         else:
+            if key == 'ltorg': pool.append(len(literals) - 1)
+            elif key == 'org': LC = int(parts[1])
             inst_type = ('AD ' + str(DIRECTIVES[key][0]))
-        mnemo = parts[0].lower()
+        mnemo = key
 
     # check for opcode
     elif parts[0].lower() in MNEMONIC_TABLE:
@@ -142,8 +148,16 @@ def parse(inst: str, line: int) -> Instruction:
     if len(parts) > 2:
         operand2 = parts[2]
         if mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS |  JUMP_INSTRUCTIONS:
-            if parts[2] not in label_names(labels):
-                backlog_labels[parts[2]] = (line, LC)    
+            if operand2.startswith('='):
+                if int(operand2[1:]) not in literal_dict:
+                    literal_label = 'LT' + str(len(literals)).zfill(2)
+                    value = int(operand2[1:])
+
+                    literals.append((literal_label, value))
+                    literal_dict[value] = literal_label
+
+            elif operand2 not in label_names(labels) and operand2 not in REGISTERS:
+                backlog_labels[operand2] = (line, LC)    
 
     ins = Instruction(label, mnemo, operand1, operand2, inst_type=inst_type, _LC=LC, line=line)
 
@@ -202,8 +216,16 @@ def pass1() -> bool:
 
         if inst.operand2 in label_dict:
             inst.operand2_type = ('S ' + str(label_name_list.index(inst.operand2)))
+        elif inst.operand2.startswith('='):
+            val = int(inst.operand2[1:])
+            inst.operand2 = literal_dict[val]
+            inst.operand2_type = ('L ' + str(literals.index((inst.operand2, val))))
+        elif inst.operand2 in REGISTERS:
+            inst.operand2_type = ('R ' + str(REGISTERS[inst.operand2]))
+
 
     f.close()
+    pool.append(len(literals) - 1)
 
 
 def print_IC():
@@ -219,6 +241,16 @@ def print_symbols():
     for index, (key, val) in enumerate(labels):
         print(f"{index}\t{key}\t\t{val}")
 
+def print_literals():
+    print("------------------------Literal Table----------------------------")
+    print("Index\tLabel Name\tValue")
+    for index, (name, value) in enumerate(literals):
+        print(f"{index}\t{name}\t\t{value}")
+
+def print_pool():
+    print("-------------------------Pool Table------------------------------")
+    for val in pool:
+        print(val)
 
 def error_or_execute():
     if backlog_labels:
@@ -229,6 +261,8 @@ def error_or_execute():
     elif not ERROR_FOUND:
         print_IC()
         print_symbols()
+        print_literals()
+        print_pool()
 
 
 if __name__ == '__main__':
