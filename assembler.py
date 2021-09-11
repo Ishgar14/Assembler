@@ -103,15 +103,15 @@ def parse(inst: str, line: int) -> Instruction:
     if parts[0].lower() in DIRECTIVES:
         key = parts[0].lower()
         if parts[0].lower() in {'dc', 'ds'}:
-            inst_type = ('DL ' + str(DECLARATIVES[key][0]))
+            inst_type = (f'(DL, {str(DECLARATIVES[key][0])})')
         else:
-            inst_type = ('AD ' + str(DIRECTIVES[key][0]))
+            inst_type = (f'(AD, {str(DIRECTIVES[key][0])})')
         mnemo = parts[0].lower()
 
     # check for opcode
     elif parts[0].lower() in MNEMONIC_TABLE:
         mnemo = parts[0].lower()
-        inst_type = ('IS ' + str(MNEMONIC_TABLE[mnemo][0]))
+        inst_type = (f'(IS, {str(MNEMONIC_TABLE[mnemo][0])})')
         size = MNEMONIC_TABLE[mnemo][1]
 
         if len(parts) != size:
@@ -170,7 +170,7 @@ def pass1() -> bool:
 
     if line[0] == 'start':
         i = 1
-        inst_type = ('AD ' + str(DIRECTIVES['start'][0]))
+        inst_type = (f'(AD, {str(DIRECTIVES["start"][0])})')
         if len(line) == 2:
             LC = int(line[1])
             instructions.append(Instruction(mnemonic="start", operand1=LC, inst_type=inst_type, _LC=LC, line=i))
@@ -192,16 +192,16 @@ def pass1() -> bool:
 
     for inst in instructions:
         if inst.operand1 in label_dict:
-            inst.operand1_type = ('S ' + str(label_name_list.index(inst.operand1)))
+            inst.operand1_type = (f'(S, {str(label_name_list.index(inst.operand1))})')
         elif inst.operand1 in REGISTERS:
-            inst.operand1_type = ('R ' + str(REGISTERS[inst.operand1]))
+            inst.operand1_type = (f'(R, {str(REGISTERS[inst.operand1])})')
         elif inst.operand1 in JUMP_CONDITIONS:
-            inst.operand1_type = ('CD ' + str(JUMP_CONDITIONS[inst.operand1]))
+            inst.operand1_type = (f'(CD, {str(JUMP_CONDITIONS[inst.operand1])})')
         elif str(inst.operand1).isnumeric():
-            inst.operand1_type = ('C ' + str(inst.operand1))
+            inst.operand1_type = (f'(C, {str(inst.operand1)})')
 
         if inst.operand2 in label_dict:
-            inst.operand2_type = ('S ' + str(label_name_list.index(inst.operand2)))
+            inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2))})')
 
     f.close()
 
