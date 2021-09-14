@@ -148,7 +148,7 @@ def parse(inst: str, line: int) -> Instruction:
     ins = Instruction(label, mnemo, operand1, operand2, inst_type=inst_type, _LC=LC, line=line)
 
     if 'IS' in inst_type:
-        LC += size
+        LC += 2
     elif mnemo in DECLARATIVES:
         if mnemo == 'dc':
             LC += MEMORY_WIDTH
