@@ -269,7 +269,7 @@ def print_symbols():
 
 def print_literals():
     print("------------------------Literal Table----------------------------")
-    print("Index\tLabel Name\tValue\tLC")
+    print("Index\tLiteral Name\tValue\tLC")
     for index, (name, value, linecount) in enumerate(literals):
         print(f"{index}\t{name}\t\t{value}\t{linecount if linecount != -1 else ''}")
 
