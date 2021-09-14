@@ -10,7 +10,7 @@ MEMORY_WIDTH = 1
 REGISTERS = {'areg': 1, 'breg': 2, 'creg': 3, 'dreg': 4, }
 
 # Set of all assembler directives
-# The tuple represents (opcode, size of instruction)
+# The tuple represents (opcode, number of expected tokens)
 DECLARATIVES = {'ds': (1, 2), 'dc': (2, 2), }
 DIRECTIVES = {
     'start': (1, 2),
@@ -95,7 +95,7 @@ def inlay_literals():
 
 
     for fish in sea:
-        instructions.append(Instruction(fish[0], 'dc', fish[1], _LC=LC, inst_type='DL ' + str(DIRECTIVES['dc'][0]), op1_type='C ' + str(fish[1])))
+        instructions.append(Instruction(fish[0], 'dc', fish[1], _LC=LC, inst_type=f'(DL, {str(DIRECTIVES["dc"][0])})', op1_type=f'(C, {str(fish[1])})'))
         literals[literals.index(fish)] = (fish[0], fish[1], LC)
         literal_dict[fish[1]] = (literal_dict[fish[1]][0], LC)
         LC += MEMORY_WIDTH
@@ -127,7 +127,7 @@ def parse(inst: str, line: int) -> Instruction:
     if parts[0].lower() in DIRECTIVES:
         key = parts[0].lower()
         if key in DECLARATIVES:
-            inst_type = ('DL ' + str(DECLARATIVES[key][0]))
+            inst_type = (f'(DL, {str(DECLARATIVES[key][0])})')
         else:
             if key == 'ltorg': 
                 # pool.append(len(literals) - 1)
@@ -136,13 +136,13 @@ def parse(inst: str, line: int) -> Instruction:
                 pool_counter = len(literals) - 1
                 return
             elif key == 'org': LC = int(parts[1])
-            inst_type = ('AD ' + str(DIRECTIVES[key][0]))
+            inst_type = (f'(AD, {str(DIRECTIVES[key][0])})')
         mnemo = key
 
     # check for opcode
     elif parts[0].lower() in MNEMONIC_TABLE:
         mnemo = parts[0].lower()
-        inst_type = ('IS ' + str(MNEMONIC_TABLE[mnemo][0]))
+        inst_type = (f'(IS, {str(MNEMONIC_TABLE[mnemo][0])})')
         size = MNEMONIC_TABLE[mnemo][1]
 
         if len(parts) != size:
@@ -187,7 +187,7 @@ def parse(inst: str, line: int) -> Instruction:
     ins = Instruction(label, mnemo, operand1, operand2, inst_type=inst_type, _LC=LC, line=line)
 
     if 'IS' in inst_type:
-        LC += size
+        LC += 2
     elif mnemo in DECLARATIVES:
         if mnemo == 'dc':
             LC += MEMORY_WIDTH
@@ -209,7 +209,7 @@ def pass1() -> bool:
 
     if line[0] == 'start':
         i = 1
-        inst_type = ('AD ' + str(DIRECTIVES['start'][0]))
+        inst_type = (f'(AD, {str(DIRECTIVES["start"][0])})')
         if len(line) == 2:
             LC = int(line[1])
             instructions.append(Instruction(mnemonic="start", operand1=LC, inst_type=inst_type, _LC=LC, line=i))
@@ -231,22 +231,22 @@ def pass1() -> bool:
 
     for inst in instructions:
         if inst.operand1 in label_dict:
-            inst.operand1_type = ('S ' + str(label_name_list.index(inst.operand1)))
+            inst.operand1_type = (f'(S, {str(label_name_list.index(inst.operand1))})')
         elif inst.operand1 in REGISTERS:
-            inst.operand1_type = ('R ' + str(REGISTERS[inst.operand1]))
+            inst.operand1_type = (f'(R, {str(REGISTERS[inst.operand1])})')
         elif inst.operand1 in JUMP_CONDITIONS:
-            inst.operand1_type = ('CD ' + str(JUMP_CONDITIONS[inst.operand1]))
+            inst.operand1_type = (f'(CD, {str(JUMP_CONDITIONS[inst.operand1])})')
         elif str(inst.operand1).isnumeric():
-            inst.operand1_type = ('C ' + str(inst.operand1))
+            inst.operand1_type = (f'(C, {str(inst.operand1)})')
 
         if inst.operand2 in label_dict:
-            inst.operand2_type = ('S ' + str(label_name_list.index(inst.operand2)))
+            inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2))})')
         elif inst.operand2.startswith('='):
             val = int(inst.operand2[1:])
             inst.operand2 = literal_dict[val][0]
-            inst.operand2_type = ('L ' + str(literals.index((inst.operand2, val, literal_dict[val][1]))))
+            inst.operand2_type = (f'(L, {str(literals.index((inst.operand2, val, literal_dict[val][1])))})')
         elif inst.operand2 in REGISTERS:
-            inst.operand2_type = ('R ' + str(REGISTERS[inst.operand2]))
+            inst.operand2_type = (f'(R, {str(REGISTERS[inst.operand2])})')
 
 
     f.close()
