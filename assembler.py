@@ -10,7 +10,7 @@ MEMORY_WIDTH = 1
 REGISTERS = {'areg': 1, 'breg': 2, 'creg': 3, 'dreg': 4, }
 
 # Set of all assembler directives
-# The tuple represents (opcode, size of instruction)
+# The tuple represents (opcode, number of tokens)
 DECLARATIVES = {'ds': (1, 2), 'dc': (2, 2), }
 DIRECTIVES = {
     'start': (1, 2),
