@@ -177,9 +177,9 @@ def parse(inst: str, line: int) -> Instruction:
         operand2 = parts[2]
         if mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS |  JUMP_INSTRUCTIONS:
             if operand2.startswith('='):
-                if int(operand2[1:]) not in literal_dict:
+                if int(operand2[2:-1]) not in literal_dict:
                     literal_label = 'LT' + str(len(literals) + 1).zfill(2)
-                    value = int(operand2[1:])
+                    value = int(operand2[2:-1])
 
                     literals.append((literal_label, value, -1))
                     literal_dict[value] = (literal_label, -1)
@@ -245,7 +245,7 @@ def pass1() -> bool:
         if inst.operand2 in label_dict:
             inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2) + 1)})')
         elif inst.operand2.startswith('='):
-            val = int(inst.operand2[1:])
+            val = int(inst.operand2[2:-1])
             inst.operand2 = literal_dict[val][0]
             inst.operand2_type = (f'(L, {str(literals.index((inst.operand2, val, literal_dict[val][1])) + 1)})')
         elif inst.operand2 in REGISTERS:
