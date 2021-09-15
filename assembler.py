@@ -230,8 +230,8 @@ def error_or_execute():
             print(f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code')
 
     elif not ERROR_FOUND:
-        print_IC()
         print_symbols()
+        print_IC()
 
 
 if __name__ == '__main__':
