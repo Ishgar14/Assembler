@@ -73,7 +73,7 @@ class Instruction:
 
 instructions: List[Instruction] = []
 
-labels: List[Tuple[str, int]] = []
+labels: List[Tuple[str, int, str]] = []
 backlog_labels: Dict[str, int] = {}
 
 label_names = lambda lab: set(lab[0] for lab in labels)
@@ -96,7 +96,10 @@ def parse(inst: str, line: int) -> Instruction:
             print(f'Redeclared the label `{label}` on line {line}')
             return None
 
-        labels.append([label, LC])
+        if parts[1] == 'dc':
+            labels.append([label, LC, parts[2]])
+        else:
+            labels.append([label, LC, '-'])
         parts = parts[1:]
 
     # If first part is an assembler directive
@@ -215,9 +218,9 @@ def print_IC():
 
 def print_symbols():
     print("-------------------------Symbol Table----------------------------")
-    print("Index\tLabel Name\tLine Count")
-    for index, (key, val) in enumerate(labels):
-        print(f"{index}\t{key}\t\t{val}")
+    print("Index\tLabel Name\tLine Count\tValue")
+    for index, (key, lc, val) in enumerate(labels):
+        print(f"{index}\t{key}\t\t{lc}\t\t{val}")
 
 
 def error_or_execute():
