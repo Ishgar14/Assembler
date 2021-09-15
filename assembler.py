@@ -63,8 +63,7 @@ class Instruction:
         self.LC = _LC     # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
-        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t'# + \
-            #f'\t{self.operand1_type}\t{self.operand2_type}'
+        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t'
 
     def interm(self) -> str:
         return f'{self.instruction_type}' + \
@@ -86,9 +85,10 @@ label_names = lambda lab: set(lab[0] for lab in labels)
 def inlay_literals():
     global LC, pool_counter, instructions
 
-    if pool_counter > 0:
+    if pool_counter > 1:
         # sea = literals[pool[pool_counter] : pool[pool_counter] + 1]
         sea = literals[pool[pool_counter - 1]:]
+        # sea = literals[pool[pool_counter - 1]:]
     else:
         # sea = literals[:pool[pool_counter] + 1]
         sea = literals
@@ -134,10 +134,9 @@ def parse(inst: str, line: int) -> Instruction:
             inst_type = (f'(DL, {str(DECLARATIVES[key][0])})')
         else:
             if key == 'ltorg': 
-                # pool.append(len(literals) - 1)
                 pool.append(pool_counter)
                 inlay_literals()
-                pool_counter = len(literals) - 1
+                pool_counter = len(literals)
                 return
             elif key == 'org': LC = int(parts[1])
             inst_type = (f'(AD, {str(DIRECTIVES[key][0])})')
@@ -179,7 +178,7 @@ def parse(inst: str, line: int) -> Instruction:
         if mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS |  JUMP_INSTRUCTIONS:
             if operand2.startswith('='):
                 if int(operand2[1:]) not in literal_dict:
-                    literal_label = 'LT' + str(len(literals)).zfill(2)
+                    literal_label = 'LT' + str(len(literals) + 1).zfill(2)
                     value = int(operand2[1:])
 
                     literals.append((literal_label, value, -1))
@@ -239,7 +238,7 @@ def pass1() -> bool:
         elif inst.operand1 in REGISTERS:
             inst.operand1_type = (f'(R, {str(REGISTERS[inst.operand1])})')
         elif inst.operand1 in JUMP_CONDITIONS:
-            inst.operand1_type = (f'(CD, {str(JUMP_CONDITIONS[inst.operand1])})')
+            inst.operand1_type = (f'({str(JUMP_CONDITIONS[inst.operand1])})')
         elif str(inst.operand1).isnumeric():
             inst.operand1_type = (f'(C, {str(inst.operand1)})')
 
@@ -254,8 +253,24 @@ def pass1() -> bool:
 
 
     f.close()
-    pool.append(len(literals) - 1)
-    inlay_literals()
+    
+    # For any literals not covered by ltorg should be placed at end
+    leftovers = False
+    ind = 0
+    for i in range(len(literals) - 1, 1, -1):
+        if literals[i][2] == -1:
+            leftovers = True
+        if leftovers and literals[i][2] != -1:
+            ind = i + 1
+            break
+
+    if leftovers:
+        pool.append(ind)
+        for fish in literals[ind:]:
+            instructions.append(Instruction(fish[0], 'dc', fish[1], _LC=LC, inst_type=f'(DL, {str(DIRECTIVES["dc"][0])})', op1_type=f'(C, {str(fish[1])})'))
+            literals[literals.index(fish)] = (fish[0], fish[1], LC)
+            literal_dict[fish[1]] = (literal_dict[fish[1]][0], LC)
+            LC += MEMORY_WIDTH
 
 
 def print_IC():
@@ -289,10 +304,10 @@ def error_or_execute():
             print(f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code', end=' ')
 
     elif not ERROR_FOUND:
-        print_IC()
-        print_symbols()
         print_literals()
         print_pool()
+        print_symbols()
+        print_IC()
 
 
 if __name__ == '__main__':
