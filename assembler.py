@@ -244,11 +244,11 @@ def pass1() -> bool:
             inst.operand1_type = (f'(C, {str(inst.operand1)})')
 
         if inst.operand2 in label_dict:
-            inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2))})')
+            inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2) + 1)})')
         elif inst.operand2.startswith('='):
             val = int(inst.operand2[1:])
             inst.operand2 = literal_dict[val][0]
-            inst.operand2_type = (f'(L, {str(literals.index((inst.operand2, val, literal_dict[val][1])))})')
+            inst.operand2_type = (f'(L, {str(literals.index((inst.operand2, val, literal_dict[val][1])) + 1)})')
         elif inst.operand2 in REGISTERS:
             inst.operand2_type = (f'(R, {str(REGISTERS[inst.operand2])})')
 
@@ -269,18 +269,18 @@ def print_symbols():
     print("-------------------------Symbol Table----------------------------")
     print("Index\tLabel Name\tLine Count\tValue")
     for index, (key, lc, val) in enumerate(labels):
-        print(f"{index}\t{key}\t\t{lc}\t\t{val}")
+        print(f"{index+1}\t{key}\t\t{lc}\t\t{val}")
 
 def print_literals():
     print("------------------------Literal Table----------------------------")
     print("Index\tLiteral Name\tValue\tLC")
     for index, (name, value, linecount) in enumerate(literals):
-        print(f"{index}\t{name}\t\t{value}\t{linecount if linecount != -1 else ''}")
+        print(f"{index+1}\t{name}\t\t{value}\t{linecount if linecount != -1 else ''}")
 
 def print_pool():
     print("-------------------------Pool Table------------------------------")
     for val in pool:
-        print(val)
+        print(val + 1)
 
 def error_or_execute():
     if backlog_labels:
