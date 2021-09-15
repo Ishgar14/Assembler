@@ -199,12 +199,12 @@ def pass1() -> bool:
         elif inst.operand1 in REGISTERS:
             inst.operand1_type = (f'(R, {str(REGISTERS[inst.operand1])})')
         elif inst.operand1 in JUMP_CONDITIONS:
-            inst.operand1_type = (f'(CD, {str(JUMP_CONDITIONS[inst.operand1])})')
+            inst.operand1_type = (f'({str(JUMP_CONDITIONS[inst.operand1])})')
         elif str(inst.operand1).isnumeric():
             inst.operand1_type = (f'(C, {str(inst.operand1)})')
 
         if inst.operand2 in label_dict:
-            inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2))})')
+            inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2) + 1)})')
 
     f.close()
 
@@ -220,7 +220,7 @@ def print_symbols():
     print("-------------------------Symbol Table----------------------------")
     print("Index\tLabel Name\tLine Count\tValue")
     for index, (key, lc, val) in enumerate(labels):
-        print(f"{index}\t{key}\t\t{lc}\t\t{val}")
+        print(f"{index + 1}\t{key}\t\t{lc}\t\t{val}")
 
 
 def error_or_execute():
