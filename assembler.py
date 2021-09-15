@@ -227,7 +227,7 @@ def error_or_execute():
     if backlog_labels:
         print(f'Error: There are {len(backlog_labels)} undefined labels in source code')
         for back in backlog_labels:
-            print(f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code', end=' ')
+            print(f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code')
 
     elif not ERROR_FOUND:
         print_IC()
