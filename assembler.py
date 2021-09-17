@@ -82,25 +82,6 @@ literal_dict: Dict[int, Tuple[str, int]] = {}
 
 label_names = lambda lab: set(lab[0] for lab in labels)
 
-def inlay_literals():
-    global LC, pool_counter, instructions
-
-    if pool_counter > 1:
-        # sea = literals[pool[pool_counter] : pool[pool_counter] + 1]
-        sea = literals[pool[pool_counter - 1]:]
-        # sea = literals[pool[pool_counter - 1]:]
-    else:
-        # sea = literals[:pool[pool_counter] + 1]
-        sea = literals
-
-
-    for fish in sea:
-        instructions.append(Instruction(fish[0], 'dc', fish[1], _LC=LC, inst_type=f'(DL, {str(DIRECTIVES["dc"][0])})', op1_type=f'(C, {str(fish[1])})'))
-        literals[literals.index(fish)] = (fish[0], fish[1], LC)
-        literal_dict[fish[1]] = (literal_dict[fish[1]][0], LC)
-        LC += MEMORY_WIDTH
-
-    pool_counter += 1
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
@@ -135,7 +116,7 @@ def parse(inst: str, line: int) -> Instruction:
         else:
             if key == 'ltorg': 
                 pool.append(pool_counter)
-                inlay_literals()
+                # inlay_literals()
                 pool_counter = len(literals)
                 return
             elif key == 'org': LC = int(parts[1])
@@ -181,8 +162,8 @@ def parse(inst: str, line: int) -> Instruction:
                     literal_label = 'LT' + str(len(literals) + 1).zfill(2)
                     value = int(operand2[2:-1])
 
-                    literals.append((literal_label, value, -1))
-                    literal_dict[value] = (literal_label, -1)
+                    literals.append((literal_label, value, LC))
+                    literal_dict[value] = (literal_label, LC)
 
             elif operand2 not in label_names(labels) and operand2 not in REGISTERS:
                 backlog_labels[operand2] = (line, LC)    
@@ -246,31 +227,13 @@ def pass1() -> bool:
             inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2) + 1)})')
         elif inst.operand2.startswith('='):
             val = int(inst.operand2[2:-1])
-            inst.operand2 = literal_dict[val][0]
-            inst.operand2_type = (f'(L, {str(literals.index((inst.operand2, val, literal_dict[val][1])) + 1)})')
+            inst.operand2_type = (
+                f'(L, {str(literals.index((literal_dict[val][0], val, literal_dict[val][1])) + 1)})')
         elif inst.operand2 in REGISTERS:
             inst.operand2_type = (f'(R, {str(REGISTERS[inst.operand2])})')
 
 
     f.close()
-    
-    # For any literals not covered by ltorg should be placed at end
-    leftovers = False
-    ind = 0
-    for i in range(len(literals) - 1, 1, -1):
-        if literals[i][2] == -1:
-            leftovers = True
-        if leftovers and literals[i][2] != -1:
-            ind = i + 1
-            break
-
-    if leftovers:
-        pool.append(ind)
-        for fish in literals[ind:]:
-            instructions.append(Instruction(fish[0], 'dc', fish[1], _LC=LC, inst_type=f'(DL, {str(DIRECTIVES["dc"][0])})', op1_type=f'(C, {str(fish[1])})'))
-            literals[literals.index(fish)] = (fish[0], fish[1], LC)
-            literal_dict[fish[1]] = (literal_dict[fish[1]][0], LC)
-            LC += MEMORY_WIDTH
 
 
 def print_IC():
@@ -288,9 +251,9 @@ def print_symbols():
 
 def print_literals():
     print("------------------------Literal Table----------------------------")
-    print("Index\tLiteral Name\tValue\tLC")
+    print("Index\tValue\tLC")
     for index, (name, value, linecount) in enumerate(literals):
-        print(f"{index+1}\t{name}\t\t{value}\t{linecount if linecount != -1 else ''}")
+        print(f"{index+1}\t{value}\t{linecount if linecount != -1 else ''}")
 
 def print_pool():
     print("-------------------------Pool Table------------------------------")
