@@ -116,9 +116,7 @@ def parse(inst: str, line: int) -> Instruction:
         else:
             if key == 'ltorg': 
                 pool.append(pool_counter)
-                # inlay_literals()
                 pool_counter = len(literals)
-                return
             elif key == 'org': LC = int(parts[1])
             inst_type = (f'(AD, {str(DIRECTIVES[key][0])})')
         mnemo = key
