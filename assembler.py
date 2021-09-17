@@ -13,31 +13,15 @@ REGISTERS = {'areg': 1, 'breg': 2, 'creg': 3, 'dreg': 4, }
 # The tuple represents (opcode, number of expected tokens)
 DECLARATIVES = {'ds': (1, 2), 'dc': (2, 2), }
 DIRECTIVES = {
-    'start': (1, 2),
-    'end': (2, 1),
-    'org': (3, 2),
-    'ltorg': (4, 1)
+    'start': (1, 2), 'end': (2, 1), 'org': (3, 2), 'ltorg': (4, 1)
 } | DECLARATIVES
 
 
 IO_INSTRUCTIONS = {'read': (1, 2), 'print': (2, 2)}
-
 DATA_TRANSFER_INSTRUCTIONS = {'movem': (3, 3), 'mover': (4, 3)}
-
 ARITHMETIC_INSTRUCTIONS = { 'add': (5, 3), 'sub': (6, 3), 'mul': (7, 3), 'div': (8, 3), 'cmp': (9, 3)}
-
-JUMP_INSTRUCTIONS = {
-    'bc': (10, 3),
-}
-
-JUMP_CONDITIONS = {
-    'lt': 1,
-    'le': 2,
-    'eq': 3,
-    'gt': 4,
-    'ge': 5,
-    'ne': 6,
-}
+JUMP_INSTRUCTIONS = { 'bc': (10, 3), }
+JUMP_CONDITIONS = { 'lt': 1, 'le': 2, 'eq': 3, 'gt': 4, 'ge': 5, 'ne': 6, }
 
 
 # The set of valid symbols
@@ -237,7 +221,6 @@ def pass1() -> bool:
 def print_IC():
     print("------------------------Intermediate Code-------------------------")
     print('LC\tLabel\tMnemonic\tOperand1\tOperand2\t\tIC', end='\n\n')
-    # print('LC\tInst Type\tOperand1 Type\tOperand2 Type')
     for ins in instructions:
         print(ins, ins.interm())
 
