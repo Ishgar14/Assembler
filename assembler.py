@@ -100,6 +100,7 @@ def parse(inst: str, line: int) -> Instruction:
         else:
             if key == 'ltorg': 
                 pool.append(pool_counter)
+                spare_LC = LC + MEMORY_WIDTH * (len(literals) - pool_counter)
                 pool_counter = len(literals)
             elif key == 'org': LC = int(parts[1])
             inst_type = (f'(AD, {str(DIRECTIVES[key][0])})')
@@ -123,6 +124,10 @@ def parse(inst: str, line: int) -> Instruction:
 
     # If first operand doesn't exist
     if len(parts) < 2:
+        if mnemo == 'ltorg':
+            instruct = Instruction(label, mnemo, operand1, operand2, _LC=LC, inst_type=inst_type)
+            LC = spare_LC
+            return instruct
         return Instruction(label, mnemo, operand1, operand2, _LC=LC, inst_type=inst_type)
 
     op1 = parts[1]
