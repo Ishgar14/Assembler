@@ -63,8 +63,7 @@ class Instruction:
         self.LC = _LC     # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
-        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t'# + \
-            #f'\t{self.operand1_type}\t{self.operand2_type}'
+        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t'
 
     def interm(self) -> str:
         return f'{self.instruction_type}' + \
@@ -91,10 +90,10 @@ def parse(inst: str, line: int) -> Instruction:
         if label in backlog_labels:
             del backlog_labels[label]
 
-        if label in label_names(labels):
-            ERROR_FOUND = True
-            print(f'Redeclared the label `{label}` on line {line}')
-            return None
+        # if label in label_names(labels):
+        #     ERROR_FOUND = True
+        #     print(f'Redeclared the label `{label}` on line {line}')
+        #     return None
 
         if parts[1] == 'dc':
             labels.append([label, LC, parts[2]])
@@ -165,7 +164,7 @@ def parse(inst: str, line: int) -> Instruction:
     In pass1 we will read the source code line by line
     and convert it to intermediate code
 '''
-def pass1() -> bool:
+def pass1(FILE_NAME: str) -> List[Instruction]:
     global ERROR_FOUND, LC
     i = 0
     f = open(f'{FILE_NAME}')
@@ -207,12 +206,12 @@ def pass1() -> bool:
             inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2) + 1)})')
 
     f.close()
+    return instructions
 
 
 def print_IC():
     print("------------------------Intermediate Code-------------------------")
     print('LC\tLabel\tMnemonic\tOperand1\tOperand2\t\tIC', end='\n\n')
-    # print('LC\tInst Type\tOperand1 Type\tOperand2 Type')
     for ins in instructions:
         print(ins, ins.interm())
 
