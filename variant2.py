@@ -33,7 +33,7 @@ def errors():
     # Find undefined symbols
     registers = {'areg', 'breg', 'creg', 'dreg'}
     for index, ins in enumerate(instructions):
-        if ins.operand1:
+        if ins.operand1 and ins.mnemonic.lower() != 'bc':
             if ins.operand1 not in registers | label_names and not str(ins.operand1).isdigit():
                 print(f'Undefined Symbol "{ins.operand1}" on statement {index + 1}')
         if ins.operand2:
