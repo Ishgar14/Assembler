@@ -15,20 +15,18 @@ def pass2():
             continue
 
         if 'IS' in ins.instruction_type:
-            '''
-                WORK IN PROGRESS!!!!!
-            '''
+            operation = get_digit(ins.instruction_type)
             first_num = get_digit(ins.operand1_type)
 
             # If second operand is a symbol
             if 'S' in ins.operand2_type:
                 # Then get its LC
-                symbols = {lab[0]: lab[1] for lab in labels}
+                symbols = {lab[0]: str(lab[1]) for lab in labels}
                 second_num = symbols[ins.operand2]
             else:
                 second_num = get_digit(ins.operand2_type)
 
-            MC = ' '.join([first_num, second_num])
+            MC = ' '.join([operation, first_num, second_num])
             MC = str(ins.LC) + ': ' + MC
             MACHINE_CODE.append(MC)
         
@@ -39,7 +37,7 @@ def pass2():
     return MACHINE_CODE
 
 # Returns first occurence of a number present in given string
-def get_digit(line: str) -> int:
+def get_digit(line: str) -> str:
     num = ""
     i = 0
 
@@ -48,14 +46,14 @@ def get_digit(line: str) -> int:
             num += line[i]
             i += 1
             if i >= len(line):
-                return int(num)
+                return num
 
         while not line[i].isdigit():
             i += 1
             if i >= len(line):
-                return int(num)
+                return num
 
-    return int(num)
+    return num
 
 def print_IC():
     print("------------------------Intermediate Code-------------------------")
