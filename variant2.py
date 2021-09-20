@@ -1,4 +1,5 @@
 from variant1 import pass1, instructions, labels
+import re
 
 FILE_NAME = './ass3.asm'
 MACHINE_CODE = []
@@ -8,15 +9,53 @@ def pass2():
 
     for ins in instructions:
         IC = ins.interm()
-        if 'IS' not in IC:
+
+        # We dont need assembler directives statements
+        if 'AD' in ins.instruction_type:
             continue
 
-        MC = ' '.join(list(filter(lambda x: x.isdigit(), IC)))
-        MC = str(ins.LC) + ': ' + MC
-        MACHINE_CODE.append(MC)
+        if 'IS' in ins.instruction_type:
+            '''
+                WORK IN PROGRESS!!!!!
+            '''
+            first_num = get_digit(ins.operand1_type)
+
+            # If second operand is a symbol
+            if 'S' in ins.operand2_type:
+                # Then get its LC
+                symbols = {lab[0]: lab[1] for lab in labels}
+                second_num = symbols[ins.operand2]
+            else:
+                second_num = get_digit(ins.operand2_type)
+
+            MC = ' '.join([first_num, second_num])
+            MC = str(ins.LC) + ': ' + MC
+            MACHINE_CODE.append(MC)
+        
+        else:
+            declarative = str(ins.LC) + ': ' + ins.operand1
+            MACHINE_CODE.append(declarative)
     
     return MACHINE_CODE
 
+# Returns first occurence of a number present in given string
+def get_digit(line: str) -> int:
+    num = ""
+    i = 0
+
+    while i < len(line):
+        while line[i].isdigit():
+            num += line[i]
+            i += 1
+            if i >= len(line):
+                return int(num)
+
+        while not line[i].isdigit():
+            i += 1
+            if i >= len(line):
+                return int(num)
+
+    return int(num)
 
 def print_IC():
     print("------------------------Intermediate Code-------------------------")
