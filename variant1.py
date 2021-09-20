@@ -31,12 +31,7 @@ JUMP_INSTRUCTIONS = {
 }
 
 JUMP_CONDITIONS = {
-    'lt': 1,
-    'le': 2,
-    'eq': 3,
-    'gt': 4,
-    'ge': 5,
-    'ne': 6,
+    'lt': 1, 'le': 2, 'eq': 3, 'gt': 4, 'ge': 5, 'ne': 6, 'any': 7
 }
 
 
