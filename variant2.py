@@ -1,9 +1,21 @@
 from variant1 import pass1, instructions, labels
 
-def pass2():
-    pass1('./ass3.asm')
+FILE_NAME = './ass3.asm'
+MACHINE_CODE = []
 
-    pass
+def pass2():
+    instructions = pass1(FILE_NAME)
+
+    for ins in instructions:
+        IC = ins.interm()
+        if 'IS' not in IC:
+            continue
+
+        MC = ' '.join(list(filter(lambda x: x.isdigit(), IC)))
+        MC = str(ins.LC) + ': ' + MC
+        MACHINE_CODE.append(MC)
+    
+    return MACHINE_CODE
 
 
 def print_IC():
@@ -17,6 +29,13 @@ def print_symbols():
     print("Index\tLabel Name\tLine Count\tValue")
     for index, (key, lc, val) in enumerate(labels):
         print(f"{index + 1}\t{key}\t\t{lc}\t\t{val}")
+
+
+def print_machinecode():
+    print('Machine Code'.center(65, '-'))
+
+    for mc in MACHINE_CODE:
+        print(mc)
 
 
 def errors():
@@ -42,12 +61,9 @@ def errors():
 
 
 def show_tables():
-    # if backlog_labels:
-    #     print(f'Error: There are {len(backlog_labels)} undefined labels in source code')
-    #     for back in backlog_labels:
-    #         print(f'In file {FILE_NAME} on line {backlog_labels[back][0]} label `{back}` is refered to but not declared anywhere in code')
     print_IC()
     print_symbols()
+    print_machinecode()
 
 
 if __name__ == '__main__':
