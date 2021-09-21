@@ -130,6 +130,7 @@ def parse_prepro(line: str):
 
     # If we are defining a expansion time variable
     if parts[0] == 'lcl':
+        MACRO_NAME_TABLE[-1][3] += 1
         EXPANSION_VARIABLE_TABLE.append(parts[1][1:])
 
     # If it is a set operation
