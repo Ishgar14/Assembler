@@ -226,6 +226,12 @@ def print_EVT():
         print(index + 1, '\t'.join(row), sep='\t')
 
 def print_SST():
+    print(titalize(' Sequence Symbol Name Table '))
+    print('Index\tName')
+    for index, (name, _) in enumerate(SEQUENCE_SYMBOL_TABLE):
+        print(index + 1, name, sep='\t')
+
+def print_SNT():
     print(titalize(' Sequence Symbol Table '))
     print('Index\tName\tEntry')
     for index, (name, entry) in enumerate(SEQUENCE_SYMBOL_TABLE):
@@ -238,6 +244,7 @@ def print_all_tables():
     print_KPT()
     print_EVT()
     print_SST()
+    print_SNT()
     
 
 def titalize(title: str, size: int = 75, pattern: str = '=') -> str:
