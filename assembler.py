@@ -64,6 +64,7 @@ pool_counter: int = 0
 literals: List[Tuple[str, int, int]] = []
 literal_dict: Dict[int, Tuple[str, int]] = {}
 
+for_ref_labels = set()
 label_names = lambda lab: set(lab[0] for lab in labels)
 
 
@@ -80,15 +81,20 @@ def parse(inst: str, line: int) -> Instruction:
         if label in backlog_labels:
             del backlog_labels[label]
 
-        if label in label_names(labels):
+        if label in for_ref_labels:
+            lab_collection = [lab[0] for lab in labels]
+            ind = lab_collection.index(label)
+            val = parts[2] if parts[1].lower() == 'dc' else '-'
+            labels[ind] = [labels[ind][0], LC, val]
+
+        elif label in label_names(labels):
             ERROR_FOUND = True
             print(f'Redeclared the label `{label}` on line {line}')
             return None
 
-        if parts[1] == 'dc':
-            labels.append([label, LC, parts[2]])
-        else:
-            labels.append([label, LC, '-'])
+        if label not in for_ref_labels:
+            val = parts[2] if parts[1] == 'dc' else '-'
+            labels.append([label, LC, val])
 
         parts = parts[1:]
 
@@ -153,7 +159,9 @@ def parse(inst: str, line: int) -> Instruction:
                     literal_dict[value] = (literal_label, LC)
 
             elif operand2 not in label_names(labels) and operand2 not in REGISTERS:
-                backlog_labels[operand2] = (line, LC)    
+                backlog_labels[operand2] = (line, LC)
+                labels.append([operand2, 0, '-'])
+                for_ref_labels.add(operand2)
 
     ins = Instruction(label, mnemo, operand1, operand2, inst_type=inst_type, _LC=LC, line=line)
 
