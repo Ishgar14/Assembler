@@ -191,33 +191,33 @@ def pass1() -> bool:
         line = line.strip()
         i += 1
         if len(line) > 0:
-            ins = parse(line, i)
-            if not ins:
+            inst = parse(line, i)
+            if not inst:
                 continue
 
-            instructions.append(ins)
 
-    label_dict = {lab[0]: lab[1] for lab in labels}
-    label_name_list = [lab[0] for lab in labels]
+            label_dict = {lab[0]: lab[1] for lab in labels}
+            label_name_list = [lab[0] for lab in labels]
 
-    for inst in instructions:
-        if inst.operand1 in label_dict:
-            inst.operand1_type = (f'(S, {str(label_name_list.index(inst.operand1))})')
-        elif inst.operand1 in REGISTERS:
-            inst.operand1_type = (f'(R, {str(REGISTERS[inst.operand1])})')
-        elif inst.operand1 in JUMP_CONDITIONS:
-            inst.operand1_type = (f'({str(JUMP_CONDITIONS[inst.operand1])})')
-        elif str(inst.operand1).isnumeric():
-            inst.operand1_type = (f'(C, {str(inst.operand1)})')
+            if inst.operand1 in label_dict:
+                inst.operand1_type = (f'(S, {str(label_name_list.index(inst.operand1))})')
+            elif inst.operand1 in REGISTERS:
+                inst.operand1_type = (f'(R, {str(REGISTERS[inst.operand1])})')
+            elif inst.operand1 in JUMP_CONDITIONS:
+                inst.operand1_type = (f'({str(JUMP_CONDITIONS[inst.operand1])})')
+            elif str(inst.operand1).isnumeric():
+                inst.operand1_type = (f'(C, {str(inst.operand1)})')
 
-        if inst.operand2 in label_dict:
-            inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2) + 1)})')
-        elif inst.operand2.startswith('='):
-            val = int(inst.operand2[2:-1])
-            inst.operand2_type = (
-                f'(L, {str(literals.index((literal_dict[val][0], val, literal_dict[val][1])) + 1)})')
-        elif inst.operand2 in REGISTERS:
-            inst.operand2_type = (f'(R, {str(REGISTERS[inst.operand2])})')
+            if inst.operand2 in label_dict:
+                inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2) + 1)})')
+            elif inst.operand2.startswith('='):
+                val = int(inst.operand2[2:-1])
+                inst.operand2_type = (
+                    f'(L, {str(literals.index((literal_dict[val][0], val, literal_dict[val][1])) + 1)})')
+            elif inst.operand2 in REGISTERS:
+                inst.operand2_type = (f'(R, {str(REGISTERS[inst.operand2])})')
+
+            instructions.append(inst)
 
 
     f.close()
@@ -237,7 +237,7 @@ def print_symbols():
 
 def print_literals():
     print("------------------------Literal Table----------------------------")
-    print("Index\tValue\tLC")
+    print("Index\tValue\tAddress")
     for index, (name, value, linecount) in enumerate(literals):
         print(f"{index+1}\t{value}\t{linecount if linecount != -1 else ''}")
 
