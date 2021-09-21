@@ -18,27 +18,11 @@ DIRECTIVES = {
     'org': (3, 2),
     'ltorg': (4, 1)
 } | DECLARATIVES
-
-
 IO_INSTRUCTIONS = {'read': (1, 2), 'print': (2, 2)}
-
 DATA_TRANSFER_INSTRUCTIONS = {'movem': (3, 3), 'mover': (4, 3)}
-
 ARITHMETIC_INSTRUCTIONS = { 'add': (5, 3), 'sub': (6, 3), 'mul': (7, 3), 'div': (8, 3), 'cmp': (9, 3)}
-
-JUMP_INSTRUCTIONS = {
-    'bc': (10, 3),
-}
-
-JUMP_CONDITIONS = {
-    'lt': 1,
-    'le': 2,
-    'eq': 3,
-    'gt': 4,
-    'ge': 5,
-    'ne': 6,
-}
-
+JUMP_INSTRUCTIONS = { 'bc': (10, 3), }
+JUMP_CONDITIONS = { 'lt': 1, 'le': 2, 'eq': 3, 'gt': 4, 'ge': 5, 'ne': 6, }
 
 # The set of valid symbols
 MNEMONIC_TABLE = ARITHMETIC_INSTRUCTIONS | JUMP_INSTRUCTIONS | IO_INSTRUCTIONS  \
@@ -49,13 +33,12 @@ ERROR_FOUND = False
 
 class Instruction:
     def __init__(self, label: str = "", mnemonic: str = "", operand1: str = "", operand2: str = "",
-                    inst_type: str = 'mnemonic', op1_type='', op2_type='', *,
+                    inst_type: str = 'IS', op1_type='', op2_type='', *,
                     line: int = -1, _LC: int = -1):
         self.label = label
         self.mnemonic = mnemonic
         self.operand1 = operand1
         self.operand2 = operand2
-
         self.instruction_type = inst_type
         self.operand1_type = op1_type
         self.operand2_type = op2_type
@@ -63,8 +46,7 @@ class Instruction:
         self.LC = _LC     # stores line counter for instruction in machine and intermediate code
 
     def __repr__(self) -> str:
-        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t'# + \
-            #f'\t{self.operand1_type}\t{self.operand2_type}'
+        return f'{self.LC}\t{self.label}\t{self.mnemonic}\t\t{self.operand1}\t\t{self.operand2}\t\t'
 
     def interm(self) -> str:
         return f'{self.instruction_type}' + \
@@ -76,12 +58,13 @@ instructions: List[Instruction] = []
 labels: List[Tuple[str, int, str]] = []
 backlog_labels: Dict[str, int] = {}
 
+for_ref_labels = set()
 label_names = lambda lab: set(lab[0] for lab in labels)
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
 def parse(inst: str, line: int) -> Instruction:
     global ERROR_FOUND, LC, literal_count
-    label, mnemo, operand1, operand2, inst_type = '', '', '', '', 'mnemonic'
+    label, mnemo, operand1, operand2, inst_type = '', '', '', '', 'IS'
     parts = re.split(r'\s+', inst)
 
     # if first component is a label
@@ -91,15 +74,12 @@ def parse(inst: str, line: int) -> Instruction:
         if label in backlog_labels:
             del backlog_labels[label]
 
-        if label in label_names(labels):
-            ERROR_FOUND = True
-            print(f'Redeclared the label `{label}` on line {line}')
-            return None
-
-        if parts[1] == 'dc':
-            labels.append([label, LC, parts[2]])
+        if label in for_ref_labels:
+            names = [lab[0] for lab in labels]
+            index = names.index(label)
+            labels[index] = [label, LC]
         else:
-            labels.append([label, LC, '-'])
+            labels.append([label, LC])
         parts = parts[1:]
 
     # If first part is an assembler directive
@@ -144,27 +124,22 @@ def parse(inst: str, line: int) -> Instruction:
 
     if len(parts) > 2:
         operand2 = parts[2]
-        if mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS |  JUMP_INSTRUCTIONS:
-            if parts[2] not in label_names(labels):
-                backlog_labels[parts[2]] = (line, LC)    
+        if parts[2] not in REGISTERS and parts[2] not in label_names(labels):
+            backlog_labels[parts[2]] = (line, LC)
+            labels.append([parts[2], LC])
+            for_ref_labels.add(parts[2])
 
     ins = Instruction(label, mnemo, operand1, operand2, inst_type=inst_type, _LC=LC, line=line)
 
     if 'IS' in inst_type:
         LC += 2
     elif mnemo in DECLARATIVES:
-        if mnemo == 'dc':
-            LC += MEMORY_WIDTH
-        elif mnemo == 'ds':
-            LC += int(op1) * MEMORY_WIDTH
+        if mnemo == 'dc':   LC += MEMORY_WIDTH
+        elif mnemo == 'ds': LC += int(op1) * MEMORY_WIDTH
 
     return ins
 
 
-'''
-    In pass1 we will read the source code line by line
-    and convert it to intermediate code
-'''
 def pass1() -> bool:
     global ERROR_FOUND, LC
     i = 0
@@ -183,17 +158,18 @@ def pass1() -> bool:
     while line := f.readline():
         line = line.strip()
         i += 1
-        if len(line) > 0:
-            ins = parse(line, i)
-            if not ins:
-                continue
+        if len(line) == 0:
+            continue
 
-            instructions.append(ins)
+        inst = parse(line, i)
+        if not inst:
+            continue
+        
+        instructions.append(inst)
 
-    label_dict = {lab[0]: lab[1] for lab in labels}
-    label_name_list = [lab[0] for lab in labels]
+        label_dict = {lab[0]: lab[1] for lab in labels}
+        label_name_list = [lab[0] for lab in labels]
 
-    for inst in instructions:
         if inst.operand1 in label_dict:
             inst.operand1_type = (f'(S, {str(label_name_list.index(inst.operand1))})')
         elif inst.operand1 in REGISTERS:
@@ -205,6 +181,8 @@ def pass1() -> bool:
 
         if inst.operand2 in label_dict:
             inst.operand2_type = (f'(S, {str(label_name_list.index(inst.operand2) + 1)})')
+        elif inst.operand2 in REGISTERS:
+            inst.operand2_type = (f'(R, {str(REGISTERS[inst.operand2])})')
 
     f.close()
 
@@ -212,15 +190,14 @@ def pass1() -> bool:
 def print_IC():
     print("------------------------Intermediate Code-------------------------")
     print('LC\tLabel\tMnemonic\tOperand1\tOperand2\t\tIC', end='\n\n')
-    # print('LC\tInst Type\tOperand1 Type\tOperand2 Type')
     for ins in instructions:
         print(ins, ins.interm())
 
 def print_symbols():
     print("-------------------------Symbol Table----------------------------")
-    print("Index\tLabel Name\tLine Count\tValue")
-    for index, (key, lc, val) in enumerate(labels):
-        print(f"{index + 1}\t{key}\t\t{lc}\t\t{val}")
+    print("Index\tLabel Name\tAddress")
+    for index, (key, lc) in enumerate(labels):
+        print(f"{index + 1}\t{key}\t\t{lc}")
 
 
 def error_or_execute():
