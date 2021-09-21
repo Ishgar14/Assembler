@@ -97,11 +97,6 @@ def parse(inst: str, line: int) -> Instruction:
         inst_type = (f'(IS, {str(MNEMONIC_TABLE[mnemo][0])})')
         size = MNEMONIC_TABLE[mnemo][1]
 
-        if len(parts) != size:
-            ERROR_FOUND = True
-            print(f'On line {line} `{inst.strip()}`\nExpected {size} tokens but got {len(parts)}')
-            return
-
     else:
         ERROR_FOUND = True
         print(f'Unknown instruction `{parts[0]}` on line {line} in file "{FILE_NAME}"')
@@ -117,9 +112,9 @@ def parse(inst: str, line: int) -> Instruction:
     if op1[-1] == ',':op1 = op1[:-1]
     operand1 = op1
 
-    if (mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS) and operand1 not in REGISTERS:
+    if (mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS) and operand1 not in set(REGISTERS) | label_names(labels):
         ERROR_FOUND = True
-        print(f'On line {line} found illegal operand `{op1}` expected register')
+        print(f'On line {line} found illegal operand `{op1}`')
         return
 
     if len(parts) > 2:
