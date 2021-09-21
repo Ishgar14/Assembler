@@ -105,7 +105,6 @@ def parse_models(line: str):
 
     instruction = f'{" ".join(parts)}'
     return instruction
-    # MACRO_DEFINITION_TABLE.append(instruction)
 
 
 # This function parses preprocessor statements
@@ -149,7 +148,6 @@ def parse_prepro(line: str):
 
     instruction = f'{" ".join(parts)}'
     return instruction
-    # MACRO_DEFINITION_TABLE.append(instruction)
 
 
 # This function classifies wehther a given line is model or preprocessor statement
@@ -174,7 +172,7 @@ def parse() -> None:
             while (l := f.readline()).lower() != 'mend':
                 if len(l) == 0 or len(l.strip()) == 0:
                     continue
-                # print(l, classify(l))
+                
                 classification = classify(l)
 
                 if classification == 'm':
