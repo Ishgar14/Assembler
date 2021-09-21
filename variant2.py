@@ -1,5 +1,4 @@
 from variant1 import pass1, instructions, labels
-import re
 
 FILE_NAME = './ass3.asm'
 MACHINE_CODE = []
@@ -8,8 +7,6 @@ def pass2():
     instructions = pass1(FILE_NAME)
 
     for ins in instructions:
-        IC = ins.interm()
-
         # We dont need assembler directives statements
         if 'AD' in ins.instruction_type:
             continue
