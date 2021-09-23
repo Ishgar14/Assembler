@@ -1,4 +1,4 @@
-from variant1 import pass1, instructions, labels
+from variant1 import *#pass1, instructions, labels
 
 FILE_NAME = './ass3.asm'
 MACHINE_CODE = []
@@ -87,10 +87,10 @@ def errors():
     registers = {'areg', 'breg', 'creg', 'dreg'}
     for index, ins in enumerate(instructions):
         if ins.operand1 and ins.mnemonic.lower() != 'bc':
-            if ins.operand1 not in registers | label_names and not str(ins.operand1).isdigit():
+            if ins.operand1 not in registers | label_names and not str(ins.operand1).isdigit() and ins.operand1 not in defined_labels:
                 print(f'Undefined label "{ins.operand1}" on statement {index + 1}')
         if ins.operand2:
-            if ins.operand2 not in registers | label_names and not str(ins.operand2).isdigit():
+            if ins.operand2 not in registers and not str(ins.operand2).isdigit() and ins.operand2 not in defined_labels:
                 print(f'Undefined label "{ins.operand2}" on statement {index + 1}')
 
 
