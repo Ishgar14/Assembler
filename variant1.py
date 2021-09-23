@@ -1,8 +1,8 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 import re
 
 # File Reading
-FILE_NAME = './ass1.asm'
+FILE_NAME = './ass3.asm'
 
 # Constants needed for parser
 LC = 0
@@ -58,7 +58,8 @@ instructions: List[Instruction] = []
 labels: List[Tuple[str, int, str]] = []
 backlog_labels: Dict[str, int] = {}
 
-for_ref_labels = set()
+for_ref_labels: Set[str] = set()
+defined_labels: Set[str] = set()
 label_names = lambda lab: set(lab[0] for lab in labels)
 
 # This function parses one instruction at a time and returns an object of class `Instruction`
@@ -70,6 +71,7 @@ def parse(inst: str, line: int) -> Instruction:
     # if first component is a label
     if parts[0][-1] == ':':
         label = parts[0][:-1]
+        defined_labels.add(label)
 
         if label in backlog_labels:
             del backlog_labels[label]
