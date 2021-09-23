@@ -60,9 +60,9 @@ def print_IC():
 
 def print_symbols():
     print("-------------------------Symbol Table----------------------------")
-    print("Index\tLabel Name\tLine Count\tValue")
-    for index, (key, lc, val) in enumerate(labels):
-        print(f"{index + 1}\t{key}\t\t{lc}\t\t{val}")
+    print("Index\tLabel Name\tLine Count")
+    for index, (key, lc) in enumerate(labels):
+        print(f"{index + 1}\t{key}\t\t{lc}")
 
 
 def print_machinecode():
