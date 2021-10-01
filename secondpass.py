@@ -1,4 +1,4 @@
-from variant1 import *#pass1, instructions, labels
+from firstpass import *#pass1, instructions, labels
 
 FILE_NAME = './ass3.asm'
 MACHINE_CODE = []
