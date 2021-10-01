@@ -25,7 +25,7 @@ def parse_proto(line: str) -> None:
     macro_def_tab_ptr, keyword_tab_ptr, seq_symbol_ptr = len(MACRO_DEFINITION_TABLE), len(KEYWORD_PARAMTER_TABLE), len(SEQUENCE_SYMBOL_TABLE)
 
     parts = [ p for p in re.split(r'\s+', line) if len(p) > 0 ]
-    name = parts[0]
+    name = parts[0].ljust(10)
 
     for p in parts[1:]:
         p = p.replace(',', '')
