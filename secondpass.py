@@ -28,8 +28,12 @@ def pass2():
             MACHINE_CODE.append(MC)
         
         else:
-            declarative = str(ins.LC) + ': ' + ins.operand1
-            MACHINE_CODE.append(declarative)
+            if ins.mnemonic == 'dc':
+                declarative = str(ins.LC) + ': ' + ins.operand1
+                MACHINE_CODE.append(declarative)
+            else:
+                for i in range(int(ins.operand1)):
+                    MACHINE_CODE.append(str(ins.LC + i) + ': -')
     
     return MACHINE_CODE
 
