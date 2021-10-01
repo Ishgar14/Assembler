@@ -1,7 +1,7 @@
 import re
 from typing import Set, Tuple, List
 
-FILE_NAME = './macro.asm'
+FILE_NAME = './ass4.asm'
 
 
 PREPROCESSOR_TOKENS = {'lcl', 'set', 'aif', 'ago'}
@@ -169,7 +169,7 @@ def parse() -> None:
             
             parse_proto(f.readline())
 
-            while (l := f.readline()).lower() != 'mend':
+            while (l := f.readline()).strip().lower() != 'mend':
                 if len(l) == 0 or len(l.strip()) == 0:
                     continue
                 
