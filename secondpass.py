@@ -1,4 +1,4 @@
-from firstpass import *#pass1, instructions, labels
+from firstpass import *
 
 FILE_NAME = './ass3.asm'
 MACHINE_CODE = []
@@ -75,12 +75,6 @@ def print_machinecode():
 def errors():
     label_names = set()
     print('Errors'.center(65, '-'))
-
-    # for index, label in enumerate(labels):
-    #     if label[0] in label_names:
-    #         print(f'Duplicate label "{label[0]}" on statement {index + 1}')
-    #     else:
-    #         label_names.add(label[0])
 
     for index, ins in enumerate(instructions):
         # Find duplicate definitions of labels
