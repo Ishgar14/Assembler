@@ -76,21 +76,26 @@ def errors():
     label_names = set()
     print('Errors'.center(65, '-'))
 
-    # Find duplicate definitions of labels
-    for index, label in enumerate(labels):
-        if label[0] in label_names:
-            print(f'Duplicate label "{label[0]}" on statement {index + 1}')
-        else:
-            label_names.add(label[0])
+    # for index, label in enumerate(labels):
+    #     if label[0] in label_names:
+    #         print(f'Duplicate label "{label[0]}" on statement {index + 1}')
+    #     else:
+    #         label_names.add(label[0])
 
-    # Find undefined symbols
-    registers = {'areg', 'breg', 'creg', 'dreg'}
     for index, ins in enumerate(instructions):
+        # Find duplicate definitions of labels
+        if ins.label:
+            if ins.label in label_names:
+                print(f'Duplicate label "{ins.label}" on statement {index + 1}')
+            else:
+                label_names.add(ins.label)
+
+        # Find undefined symbols
         if ins.operand1 and ins.mnemonic.lower() != 'bc':
-            if ins.operand1 not in registers | label_names and not str(ins.operand1).isdigit() and ins.operand1 not in defined_labels:
+            if 'R' not in ins.operand1_type and not str(ins.operand1).isdigit() and ins.operand1 not in defined_labels:
                 print(f'Undefined label "{ins.operand1}" on statement {index + 1}')
         if ins.operand2:
-            if ins.operand2 not in registers and not str(ins.operand2).isdigit() and ins.operand2 not in defined_labels:
+            if 'R' not in ins.operand2_type and not str(ins.operand2).isdigit() and ins.operand2 not in defined_labels:
                 print(f'Undefined label "{ins.operand2}" on statement {index + 1}')
 
 
