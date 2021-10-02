@@ -168,7 +168,7 @@ def parse(inst: str, line: int) -> Instruction:
     if op1[-1] == ',':op1 = op1[:-1]
     operand1 = op1
 
-    if (mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS) and operand1 not in REGISTERS:
+    if (mnemo in DATA_TRANSFER_INSTRUCTIONS | ARITHMETIC_INSTRUCTIONS) and operand1.lower() not in REGISTERS:
         ERROR_FOUND = True
         print(f'On line {line} found illegal operand `{op1}` expected register')
         return
