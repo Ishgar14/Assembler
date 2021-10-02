@@ -19,6 +19,9 @@ UWU_TABLE: List[str] = [] # List of all your dopamine
 # To keep track of forward referenced symbols
 backlog_symbols: Set[str] = set()
 
+# To track presence of a sequence symbol within a macro
+SEQUENCE_EXISTS: bool = False
+
 # This function parses the prototype of the macro
 def parse_proto(line: str) -> None:
     name, positionals, keywords, expansionals = '', 0, 0, 0
@@ -48,6 +51,9 @@ def parse_proto(line: str) -> None:
                 positionals += 1
                 PARAMETER_NAME_TABLE.append(p[1:])
 
+    if keywords == 0:
+        keyword_tab_ptr = '-'
+    
     MACRO_NAME_TABLE.append([name, positionals, keywords, expansionals, 
         macro_def_tab_ptr, keyword_tab_ptr, seq_symbol_ptr])
 
@@ -83,10 +89,12 @@ def purify(part: str) -> str:
 
 # This function parses model statements
 def parse_models(line: str):
+    global SEQUENCE_EXISTS
     parts = [ p for p in re.split(r'\s+', line) if len(p) > 0 ]
     
     # If first part is a sequence symbol
     if parts[0].startswith('.'):
+        SEQUENCE_EXISTS = True
         sequence = parts[0][1:]
         parts = parts[1:]
         if sequence in backlog_symbols: backlog_symbols.remove(sequence)
@@ -109,9 +117,11 @@ def parse_models(line: str):
 
 # This function parses preprocessor statements
 def parse_prepro(line: str):
+    global SEQUENCE_EXISTS
     parts = [ p for p in re.split(r'\s+', line) if len(p) > 0 ]
     # If first part is a sequence symbol
     if parts[0].startswith('.'):
+        SEQUENCE_EXISTS = True
         sequence = parts[0][1:]
         parts = parts[1:]
         SEQUENCE_SYMBOL_TABLE.append((sequence, len(MACRO_DEFINITION_TABLE) + 1))
@@ -162,6 +172,7 @@ def classify(line: str) -> str:
 
 
 def parse() -> None:
+    global SEQUENCE_EXISTS
     with open(FILE_NAME) as f:
         while line := f.readline():
             if line.lower().strip() != 'macro':
@@ -183,6 +194,9 @@ def parse() -> None:
                 MACRO_DEFINITION_TABLE.append(ins)
 
             MACRO_DEFINITION_TABLE.append('mend')
+            if not SEQUENCE_EXISTS:
+                MACRO_NAME_TABLE[-1][-1] = '-'
+            SEQUENCE_EXISTS = False
 
     # Now we have to parts the Instructions again
     # To make sure that forward referenced symbols have their proper representation
@@ -203,7 +217,10 @@ def print_MNT():
     print(titalize(' Macro Name Table '))
     print('Index\tName\t\t#PP\t#KP\t#EV\tMDTP\tKPDTP\tSSTP')
     for index, (name, positionals, keywords, envis, mdtp, kpdtp, sstp) in enumerate(MACRO_NAME_TABLE):
-        print(index + 1, name, positionals, keywords, envis, mdtp + 1, kpdtp + 1, sstp + 1, sep='\t')
+        print(index + 1, name, positionals, keywords, envis, mdtp + 1, 
+            (kpdtp + 1) if isinstance(kpdtp, int) else kpdtp, 
+            (sstp + 1) if isinstance(sstp, int) else sstp, 
+            sep='\t')
 
 
 def print_PNT():
