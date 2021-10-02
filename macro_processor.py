@@ -233,7 +233,7 @@ def print_SST():
 
 def print_SSNT():
     print(titalize(' Sequence Symbol Table '))
-    print('Index\tName\tEntry')
+    print('Index\tEntry')
     for index, (_, entry) in enumerate(SEQUENCE_SYMBOL_TABLE):
         print(index + 1, entry, sep='\t')
 
