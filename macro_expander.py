@@ -1,12 +1,49 @@
 # from macro_processor import *
 from typing import Dict, List
 import macro_processor
+import assembler
 
 ACTUAL_PARAMTER_TABLE: List[List[str]] = []
 
 
-def expand() -> List[str]:
-    pass
+# This funciton expands the current macro call
+def expand(macro_name: str) -> List[str]:
+    macro_definition = macro_processor.MACRO_DEFINITION_TABLE
+    # expansion_variables = {}
+    macro_names = [m[0].strip() for m in macro_processor.MACRO_NAME_TABLE]
+    macro_body_ptr = macro_processor.MACRO_NAME_TABLE[macro_names.index(macro_name)][-3]
+    macro_body = macro_definition[
+        macro_body_ptr: macro_definition.index('mend', macro_body_ptr)]
+    parameters = ACTUAL_PARAMTER_TABLE[-1]
+    instruction = []
+    expansion = []
+
+    i = 0
+    while i < len(macro_body):
+        if macro_processor.classify(macro_body[i]) == 'm':
+            mnemonic = macro_body[i][:macro_body[i].index(' ')]
+            instruction.append(mnemonic)
+            for para in get_next_parameter(macro_body[i]):
+                instruction.append(parameters[int(para[-1]) - 1])
+            instruction.append('\n')
+        else:
+            pass
+        i += 1
+        expansion.append(instruction)
+        instruction = []
+
+    return expansion
+
+def get_next_parameter(instruction: str) -> str:
+    i = 0
+    while i < len(instruction):
+        if instruction[i] == '(':
+            index = instruction.index(')', i)
+            yield instruction[i: index]
+            i = index
+        else:
+            i += 1
+    return ''
 
 def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
     actual_parameters: List[str] = []
@@ -30,7 +67,7 @@ def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
             actual_parameters.append(keyword[1])
 
     ACTUAL_PARAMTER_TABLE.append(actual_parameters)
-    print(ACTUAL_PARAMTER_TABLE)
+    # print(ACTUAL_PARAMTER_TABLE)
 
 
 # This function returns all keyword parameters of given macro
@@ -58,23 +95,36 @@ def main(filename: str) -> None:
             line = lines[i]
 
             if not line.strip():
+                i += 1
                 continue
 
             if line.lower().strip() == 'macro':
-                while f.readline().strip().lower() != 'mend':
-                    pass
+                macro_start = i
+                while lines[i].strip() != 'mend':
+                    i += 1
+                lines = lines[:macro_start] + lines[i + 1:]
+                i = macro_start
+                continue
             
             parts = [ p for p in line.strip().split(' ') if len(p) > 0 ]
 
             if parts[0] in macro_names:
                 parts = [ p.replace(',', '') for p in parts ]
                 parse_macro_call(parts[0], parts[1:])
-                expanded_macro = expand()
+                expanded_macro = [' '.join(exp) for exp in expand(parts[0])]
                 lines = lines[:i] + expanded_macro + lines[i + 1:]
                 i += len(expanded_macro)
             else:
                 i += 1
 
+    with open('./output.asm', 'w') as f:
+        for line in lines:
+            # print(line)
+            f.write(line)
+    
+    assembler.FILE_NAME = './output.asm'
+    assembler.pass1()
+    assembler.error_or_execute()
 
 if __name__ == '__main__':
     main('./ass5.asm')
