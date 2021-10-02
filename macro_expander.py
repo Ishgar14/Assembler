@@ -21,10 +21,27 @@ def expand(macro_name: str) -> List[str]:
     i = 0
     while i < len(macro_body):
         if macro_processor.classify(macro_body[i]) == 'm':
+            # If no parameters in current macro isntruction
+            if '(' not in macro_body[i]:
+                expansion.append(macro_body[i] + '\n')
+                i += 1
+                continue
+            
             mnemonic = macro_body[i][:macro_body[i].index(' ')]
             instruction.append(mnemonic)
+
+            # If operand1 is not a macro parameter
+            if macro_body[i].index(',') < macro_body[i].index('('):
+                instruction.append(macro_body[i][macro_body[i].index(' ') + 1:macro_body[i].index(',')])
+
             for para in get_next_parameter(macro_body[i]):
-                instruction.append(parameters[int(para[-1]) - 1])
+                ind = macro_body[i].index(para)
+
+                # If it parameter is within a literal then
+                if macro_body[i][ind - 2] == '=':
+                    instruction.append(f"='{parameters[int(para[-1]) - 1]}")
+                else:
+                    instruction.append(parameters[int(para[-1]) - 1])
             instruction.append('\n')
         else:
             pass
@@ -111,7 +128,7 @@ def main(filename: str) -> None:
             if parts[0] in macro_names:
                 parts = [ p.replace(',', '') for p in parts ]
                 parse_macro_call(parts[0], parts[1:])
-                expanded_macro = [' '.join(exp) for exp in expand(parts[0])]
+                expanded_macro = [' '.join(exp) if isinstance(exp, list) else exp for exp in expand(parts[0]) ]
                 lines = lines[:i] + expanded_macro + lines[i + 1:]
                 i += len(expanded_macro)
             else:
