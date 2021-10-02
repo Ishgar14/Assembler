@@ -1,11 +1,7 @@
 import re
 from typing import Set, Tuple, List
 
-FILE_NAME = './ass4.asm'
-
-
 PREPROCESSOR_TOKENS = {'lcl', 'set', 'aif', 'ago'}
-
 
 # All the Tables
 MACRO_NAME_TABLE = [] # List of lists of [name, #pp, #kp, #ev, #MDTP, #KPTP, #SSIP]
@@ -171,9 +167,9 @@ def classify(line: str) -> str:
 
 
 
-def parse() -> None:
+def parse(filename: str = './ass4.asm') -> None:
     global SEQUENCE_EXISTS
-    with open(FILE_NAME) as f:
+    with open(filename) as f:
         while line := f.readline():
             if line.lower().strip() != 'macro':
                 continue
