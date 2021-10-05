@@ -36,13 +36,24 @@ def expand(macro_name: str) -> List[str]:
 
             for para in get_next_parameter(macro_body[i]):
                 ind = macro_body[i].index(para)
-                number = parameters[int(para[-1]) - 1]
+                number = int(para[-1]) - 1
+                try: new_para = parameters[number]
+                except: 
+                    keywords = dict(macro_processor.KEYWORD_PARAMTER_TABLE)
+                    new_para = keywords[macro_processor.PARAMETER_NAME_TABLE[number]]
 
                 # If the parameter is within a literal then
                 if macro_body[i][ind - 2] == '=':
-                    instruction.append(f"='{number}")
+                    instruction.append(f"='{new_para}")
                 else:
-                    instruction.append(number)
+                    instruction.append(new_para)
+
+            if '=' in macro_body[i]:
+                eq_index = macro_body[i].index('=')
+                # if operand 2 is literal number
+                if macro_body[i][eq_index + 2:-1].isnumeric():
+                    instruction[1] = instruction[1] + ', '
+                    instruction.append(macro_body[i][eq_index:])
             instruction.append('\n')
         else:
             pass
@@ -65,8 +76,6 @@ def get_next_parameter(instruction: str) -> str:
 
 def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
     actual_parameters: List[str] = []
-    parameter_type: List[str] = []
-    keyword_parameters = {kp[0]: kp[1] for kp in macro_processor.KEYWORD_PARAMTER_TABLE}
     macro_prototype = {macro[0].strip(): [*macro[1:]] for macro in macro_processor.MACRO_NAME_TABLE}
 
     parameter_type = [ch for ch in (("p" * macro_prototype[macro_name][0]) + 
@@ -88,7 +97,8 @@ def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
         actual_parameters.extend(keywords)
 
     ACTUAL_PARAMTER_TABLE.append(actual_parameters)
-    # print(ACTUAL_PARAMTER_TABLE)
+    # parameter_dict = dict(zip(ACTUAL_PARAMTER_TABLE[-1], parameters))
+    # print(parameter_dict)
 
 
 # This function returns all keyword parameters of given macro
