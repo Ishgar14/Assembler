@@ -36,12 +36,13 @@ def expand(macro_name: str) -> List[str]:
 
             for para in get_next_parameter(macro_body[i]):
                 ind = macro_body[i].index(para)
+                number = parameters[int(para[-1]) - 1]
 
                 # If it parameter is within a literal then
                 if macro_body[i][ind - 2] == '=':
-                    instruction.append(f"='{parameters[int(para[-1]) - 1]}")
+                    instruction.append(f"='{number}")
                 else:
-                    instruction.append(parameters[int(para[-1]) - 1])
+                    instruction.append(number)
             instruction.append('\n')
         else:
             pass
