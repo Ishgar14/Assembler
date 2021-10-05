@@ -145,5 +145,10 @@ def main(filename: str) -> None:
     assembler.pass1()
     assembler.error_or_execute()
 
+    print(" Actual Parameter Table ".center(80, '='))
+    print("Index\tParam Values")
+    for index, val in enumerate(ACTUAL_PARAMTER_TABLE):
+        print(index + 1, *val, sep='\t')
+
 if __name__ == '__main__':
     main('./ass5.asm')
