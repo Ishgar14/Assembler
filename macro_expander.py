@@ -73,10 +73,11 @@ def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
                                     ("k" * macro_prototype[macro_name][1]))]
     
     for i in range(len(parameters)):
-        if parameter_type[i] == 'p':
-            actual_parameters.append(parameters[i])
+        if '=' in parameters[i]:
+            _, _, val = parameters[i].partition('=')
+            actual_parameters.append(val)
         else:
-            actual_parameters.append(keyword_parameters[parameters[i]])
+            actual_parameters.append(parameters[i])
     
     # If number if parameters in macro call are not equal to #PP + #KP
     # then acknowledge all those remaining keyword parameters
