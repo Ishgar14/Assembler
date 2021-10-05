@@ -83,7 +83,8 @@ def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
     # then acknowledge all those remaining keyword parameters
     if len(parameters) != sum(macro_prototype[macro_name][:2]):
         keywords = [k[1] for k in keywords_of(macro_name, macro_prototype)]
-        keywords = keywords[len(actual_parameters) - parameter_type.count('k'):]
+        if len(keywords) == macro_prototype[macro_name][0]:
+            keywords = keywords[len(actual_parameters) - parameter_type.count('k'):]
         actual_parameters.extend(keywords)
 
     ACTUAL_PARAMTER_TABLE.append(actual_parameters)
