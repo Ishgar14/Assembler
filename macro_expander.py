@@ -69,8 +69,8 @@ def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
     keyword_parameters = {kp[0]: kp[1] for kp in macro_processor.KEYWORD_PARAMTER_TABLE}
     macro_prototype = {macro[0].strip(): [*macro[1:]] for macro in macro_processor.MACRO_NAME_TABLE}
 
-    for part in parameters:
-        parameter_type.append('k' if '=' in part else 'p')
+    parameter_type = [ch for ch in (("p" * macro_prototype[macro_name][0]) + 
+                                    ("k" * macro_prototype[macro_name][1]))]
     
     for i in range(len(parameters)):
         if parameter_type[i] == 'p':
@@ -81,8 +81,9 @@ def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
     # If number if parameters in macro call are not equal to #PP + #KP
     # then acknowledge all those remaining keyword parameters
     if len(parameters) != sum(macro_prototype[macro_name][:2]):
-        for keyword in keywords_of(macro_name, macro_prototype):
-            actual_parameters.append(keyword[1])
+        keywords = [k[1] for k in keywords_of(macro_name, macro_prototype)]
+        keywords = keywords[len(actual_parameters) - parameter_type.count('k'):]
+        actual_parameters.extend(keywords)
 
     ACTUAL_PARAMTER_TABLE.append(actual_parameters)
     # print(ACTUAL_PARAMTER_TABLE)
