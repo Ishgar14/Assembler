@@ -38,7 +38,7 @@ def expand(macro_name: str) -> List[str]:
                 ind = macro_body[i].index(para)
                 number = parameters[int(para[-1]) - 1]
 
-                # If it parameter is within a literal then
+                # If the parameter is within a literal then
                 if macro_body[i][ind - 2] == '=':
                     instruction.append(f"='{number}")
                 else:
