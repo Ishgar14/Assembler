@@ -81,7 +81,7 @@ def purify(part: str) -> str:
         print(f"expansion variable `{name}` not declared anywhere in code") 
         exit(1)
 
-    return part.replace(f'&{name}', f'({var_type}, {index+1})')
+    return part.replace(f'&{name}', f'({var_type},{index+1})')
 
 # This function parses model statements
 def parse_models(line: str):
@@ -122,14 +122,14 @@ def parse_prepro(line: str):
         parts = parts[1:]
         SEQUENCE_SYMBOL_TABLE.append((sequence, len(MACRO_DEFINITION_TABLE) + 1))
         if sequence in backlog_symbols: backlog_symbols.remove(sequence)
-        parts[0] = f'(S, {len(SEQUENCE_SYMBOL_TABLE)})'
+        parts[0] = f'(S,{len(SEQUENCE_SYMBOL_TABLE)})'
     
     # If last part is a sequence symbol
     if parts[-1].startswith('.'):
         sequence = parts[-1][1:]
         symbol_names = [seq[0] for seq in SEQUENCE_SYMBOL_TABLE]
         if sequence in symbol_names:
-            parts[-1] = f'(S, {symbol_names.index(sequence) + 1})'
+            parts[-1] = f'(S,{symbol_names.index(sequence) + 1})'
         else:
             backlog_symbols.add(sequence)
 
