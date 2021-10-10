@@ -8,7 +8,7 @@ MACRO_NAME_TABLE = [] # List of lists of [name, #pp, #kp, #ev, #MDTP, #KPTP, #SS
 MACRO_DEFINITION_TABLE: List[str] = [] # list of all instructions of macro
 KEYWORD_PARAMTER_TABLE: List[Tuple[str, str]] = [] # List of tuple of (keyword parameter, actual value)
 PARAMETER_NAME_TABLE: List[str] = [] # List of names of all positional parameters
-SEQUENCE_SYMBOL_TABLE: List[int] = [] # List of positions in MDT of all sequence symbols
+SEQUENCE_SYMBOL_TABLE: List[Tuple[str, int]] = [] # List of positions in MDT of all sequence symbols
 EXPANSION_VARIABLE_TABLE: List[str] = [] # List of names of all expansion time variables
 UWU_TABLE: List[str] = [] # List of all your dopamine
 
