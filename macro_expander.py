@@ -1,5 +1,5 @@
 # from macro_processor import *
-from typing import Dict, List
+from typing import Dict, List, Union
 import macro_processor
 import assembler
 
@@ -9,11 +9,20 @@ ACTUAL_PARAMTER_TABLE: List[List[str]] = []
 # This funciton expands the current macro call
 def expand(macro_name: str) -> List[str]:
     macro_definition = macro_processor.MACRO_DEFINITION_TABLE
-    # expansion_variables = {}
+    expansion_variables = {}
+    conditions = {
+        'ne' : lambda a,b: a != b,
+        'eq' : lambda a,b: a == b,
+        'le' : lambda a,b: a <= b,
+        'lt' : lambda a,b: a <  b,
+        'ge' : lambda a,b: a >= b,
+        'gt' : lambda a,b: a >  b,
+    }
     macro_names = [m[0].strip() for m in macro_processor.MACRO_NAME_TABLE]
     macro_body_ptr = macro_processor.MACRO_NAME_TABLE[macro_names.index(macro_name)][-3]
     macro_body = macro_definition[
         macro_body_ptr: macro_definition.index('mend', macro_body_ptr)]
+    
     parameters = ACTUAL_PARAMTER_TABLE[-1]
     instruction = []
     expansion = []
@@ -55,8 +64,25 @@ def expand(macro_name: str) -> List[str]:
                     instruction[1] = instruction[1] + ', '
                     instruction.append(macro_body[i][eq_index:])
             instruction.append('\n')
-        else:
-            pass
+        
+        else: # if it is a preprocessing statement
+            parts = [s.strip() for s in macro_body[i].split(' ') if s.strip()]
+            if parts[0].lower() == 'lcl':
+                _, _, id = parts[1].partition(',')
+                expansion_variables[id[:-1]] = 0
+            elif parts[1].lower() == 'set':
+                _, _, id = parts[0].partition(',')
+                expansion_variables[id[:-1]] = int(parts[2])
+            elif parts[0].lower() == 'ago':
+                sequence_number = parts[1][3:-1]
+                i = macro_processor.SEQUENCE_SYMBOL_TABLE[sequence_number][1]
+            elif parts[0].lower() == 'aif':
+                operation = [parts[1][1:], parts[2], parts[3][:-1]]
+                jump_to = parts[4][3:-1]
+                if conditions[operation[2]](to_val(operation[0]), to_val(operation[2])):
+                    i = jump_to
+
+            
         i += 1
         expansion.append(instruction)
         instruction = []
@@ -73,6 +99,16 @@ def get_next_parameter(instruction: str) -> str:
         else:
             i += 1
     return ''
+
+# This function takes in a tabular repesentation of symbols and returns their value
+# eg.  to_val("(E,1)") returns value of expansion variable 1
+def to_val(s: str, ev) -> Union[str, int]:
+    s = s.lower()
+    if s[1] == 'e':
+        return ev[s[2:-1]]
+    elif s[1] == 'p':
+        return ACTUAL_PARAMTER_TABLE[s[2:-1]]
+
 
 def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
     actual_parameters: List[str] = []
@@ -163,4 +199,5 @@ def main(filename: str) -> None:
         print(index + 1, *val, sep='\t')
 
 if __name__ == '__main__':
-    main('./ass5.asm')
+    # main('./ass5.asm')
+    main('./macro.asm')
