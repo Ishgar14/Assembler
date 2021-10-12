@@ -205,7 +205,7 @@ def main(filename: str) -> None:
     assembler.error_or_execute()
 
     print(" Actual Parameter Table ".center(80, '='))
-    print("Index\tParam Values")
+    print("Index\tActual Parameter Values")
     for index, val in enumerate(ACTUAL_PARAMTER_TABLE):
         print(index + 1, *val, sep='\t')
 
