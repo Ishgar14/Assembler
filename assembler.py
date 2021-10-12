@@ -209,8 +209,8 @@ def pass1() -> bool:
 
             if inst.operand1 in label_dict:
                 inst.operand1_type = (f'(S, {str(label_name_list.index(inst.operand1))})')
-            elif inst.operand1 in REGISTERS:
-                inst.operand1_type = (f'(R, {str(REGISTERS[inst.operand1])})')
+            elif inst.operand1.lower() in REGISTERS:
+                inst.operand1_type = (f'(R, {str(REGISTERS[inst.operand1.lower()])})')
             elif inst.operand1 in JUMP_CONDITIONS:
                 inst.operand1_type = (f'({str(JUMP_CONDITIONS[inst.operand1])})')
             elif str(inst.operand1).isnumeric():
@@ -222,8 +222,8 @@ def pass1() -> bool:
                 val = int(inst.operand2[2:-1])
                 inst.operand2_type = (
                     f'(L, {str(literals.index((literal_dict[val][0], val, literal_dict[val][1])) + 1)})')
-            elif inst.operand2 in REGISTERS:
-                inst.operand2_type = (f'(R, {str(REGISTERS[inst.operand2])})')
+            elif inst.operand2.lower() in REGISTERS:
+                inst.operand2_type = (f'(R, {str(REGISTERS[inst.operand2.lower()])})')
 
             instructions.append(inst)
 
