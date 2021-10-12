@@ -64,6 +64,8 @@ def expand(macro_name: str) -> List[str]:
                     instruction[1] = instruction[1] + ', '
                     instruction.append(macro_body[i][eq_index:])
             instruction.append('\n')
+            expansion.append(instruction)
+            instruction = []
         
         else: # if it is a preprocessing statement
             parts = [s.strip() for s in macro_body[i].split(' ') if s.strip()]
@@ -74,8 +76,8 @@ def expand(macro_name: str) -> List[str]:
                 _, _, id = parts[0].partition(',')
                 expansion_variables[id[:-1]] = int(parts[2])
             elif parts[0].lower() == 'ago':
-                sequence_number = parts[1][3:-1]
-                i = macro_processor.SEQUENCE_SYMBOL_TABLE[sequence_number][1]
+                sequence_number = int(parts[1][3:-1]) - 1
+                i = macro_processor.SEQUENCE_SYMBOL_TABLE[sequence_number][1] - 2
             elif parts[0].lower() == 'aif':
                 operation = [parts[1][1:], parts[2], parts[3][:-1]]
                 jump_to = parts[4][3:-1]
@@ -84,8 +86,6 @@ def expand(macro_name: str) -> List[str]:
 
             
         i += 1
-        expansion.append(instruction)
-        instruction = []
 
     return expansion
 
