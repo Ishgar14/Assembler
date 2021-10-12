@@ -11,12 +11,9 @@ def expand(macro_name: str) -> List[str]:
     macro_definition = macro_processor.MACRO_DEFINITION_TABLE
     expansion_variables = {}
     conditions = {
-        'ne' : lambda a,b: a != b,
-        'eq' : lambda a,b: a == b,
-        'le' : lambda a,b: a <= b,
-        'lt' : lambda a,b: a <  b,
-        'ge' : lambda a,b: a >= b,
-        'gt' : lambda a,b: a >  b,
+        'ne' : lambda a,b: a != b, 'eq' : lambda a,b: a == b,
+        'le' : lambda a,b: a <= b, 'lt' : lambda a,b: a <  b,
+        'ge' : lambda a,b: a >= b, 'gt' : lambda a,b: a >  b,
     }
     macro_names = [m[0].strip() for m in macro_processor.MACRO_NAME_TABLE]
     macro_body_ptr = macro_processor.MACRO_NAME_TABLE[macro_names.index(macro_name)][-3]
@@ -30,7 +27,7 @@ def expand(macro_name: str) -> List[str]:
     i = 0
     while i < len(macro_body):
         if macro_processor.classify(macro_body[i]) == 'm':
-            # If no parameters in current macro isntruction
+            # If no parameters in current macro instruction
             if '(' not in macro_body[i]:
                 expansion.append(macro_body[i] + '\n')
                 i += 1
@@ -142,8 +139,6 @@ def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
         actual_parameters.extend(keywords)
 
     ACTUAL_PARAMTER_TABLE.append(actual_parameters)
-    # parameter_dict = dict(zip(ACTUAL_PARAMTER_TABLE[-1], parameters))
-    # print(parameter_dict)
 
 
 # This function returns all keyword parameters of given macro
@@ -196,9 +191,9 @@ def main(filename: str) -> None:
     OUTPUT_FILENAME = './output.asm'
     with open(OUTPUT_FILENAME, 'w') as f:
         for line in lines:
-            # print(line)
             if line != '\n':
                 f.write(line)
+                # print(line)
     
 
 def print_MDT():
