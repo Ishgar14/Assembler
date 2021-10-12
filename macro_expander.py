@@ -1,7 +1,5 @@
-# from macro_processor import *
 from typing import Dict, List, Union
 import macro_processor
-import assembler
 
 ACTUAL_PARAMTER_TABLE: List[List[str]] = []
 
