@@ -114,9 +114,9 @@ def get_next_parameter(instruction: str) -> str:
 def to_val(s: str, ev) -> Union[str, int]:
     s = s.lower()
     if s[1] == 'e':
-        return ev[s[2:-1]]
+        return ev[s[3:-1]]
     elif s[1] == 'p':
-        return ACTUAL_PARAMTER_TABLE[s[2:-1]]
+        return int(ACTUAL_PARAMTER_TABLE[-1][int(s[3:-1]) - 1])
 
 
 def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
