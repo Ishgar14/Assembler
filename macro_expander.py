@@ -80,10 +80,12 @@ def expand(macro_name: str) -> List[str]:
                 i = macro_processor.SEQUENCE_SYMBOL_TABLE[sequence_number][1] - 2
             elif parts[0].lower() == 'aif':
                 operation = [parts[1][1:], parts[2], parts[3][:-1]]
-                jump_to = parts[4][3:-1]
-                if conditions[operation[2]](to_val(operation[0]), to_val(operation[2])):
-                    i = jump_to
-
+                jump_to = int(parts[4][3:-1])
+                func = conditions[operation[1].lower()]
+                op1 = to_val(operation[0], expansion_variables)
+                op2 = to_val(operation[2], expansion_variables)
+                if func(op1, op2):
+                    i = macro_processor.SEQUENCE_SYMBOL_TABLE[jump_to - 1][1] - 2
             
         i += 1
 
