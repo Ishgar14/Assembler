@@ -74,7 +74,14 @@ def expand(macro_name: str) -> List[str]:
                 expansion_variables[id[:-1]] = 0
             elif parts[1].lower() == 'set':
                 _, _, id = parts[0].partition(',')
-                expansion_variables[id[:-1]] = int(parts[2])
+                if parts[2].isnumeric():
+                    expansion_variables[id[:-1]] = int(parts[2])
+                else:
+                    for ev in get_next_parameter(parts[2]):
+                        ev_id = ev[ev.index(',') + 1]
+                        parts[2] = parts[2].replace(ev, str(expansion_variables[ev_id]))
+                        parts[2] = parts[2].replace(')', '', 1)
+                    expansion_variables[id[:-1]] = eval(parts[2])
             elif parts[0].lower() == 'ago':
                 sequence_number = int(parts[1][3:-1]) - 1
                 i = macro_processor.SEQUENCE_SYMBOL_TABLE[sequence_number][1] - 2
