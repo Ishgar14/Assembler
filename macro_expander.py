@@ -41,14 +41,17 @@ def expand(macro_name: str) -> List[str]:
             for para in get_next_parameter(macro_body[i]):
                 ind = macro_body[i].index(para)
                 number = int(para[-1]) - 1
-                try: new_para = parameters[number]
-                except: 
-                    keywords = dict(macro_processor.KEYWORD_PARAMTER_TABLE)
-                    new_para = keywords[macro_processor.PARAMETER_NAME_TABLE[number]]
+                if para[1].lower() == 'p':
+                    try: new_para = parameters[number]
+                    except: 
+                        keywords = dict(macro_processor.KEYWORD_PARAMTER_TABLE)
+                        new_para = keywords[macro_processor.PARAMETER_NAME_TABLE[number]]
+                else:
+                    new_para = expansion_variables[para[para.index(',')+1:]]
 
                 # If the parameter is within a literal then
                 if macro_body[i][ind - 2] == '=':
-                    instruction.append(f"='{new_para}")
+                    instruction.append(f"='{new_para}'")
                 else:
                     instruction.append(new_para)
 
@@ -216,8 +219,8 @@ def print_APTab():
         print(index + 1, *val, sep='\t')
     
 if __name__ == '__main__':
-    main('./ass5.asm')
-    # main('./macro.asm')
+    # main('./ass5.asm')
+    main('./macro.asm')
 
     print_MNT()
     print_MDT()
