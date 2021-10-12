@@ -200,15 +200,32 @@ def main(filename: str) -> None:
             if line != '\n':
                 f.write(line)
     
-    assembler.FILE_NAME = OUTPUT_FILENAME
-    assembler.pass1()
-    assembler.error_or_execute()
 
+def print_MDT():
+    print(macro_processor.titalize(' Maro Definition Table '))
+    print('Index\tInstruction')
+    for index, row in enumerate(macro_processor.MACRO_DEFINITION_TABLE):
+        print(index + 1, row, sep='\t')
+
+def print_MNT():
+    print(macro_processor.titalize(' Macro Name Table '))
+    print('Index\tName\t\t#PP\t#KP\t#EV\tMDTP\tKPDTP\tSSTP')
+    for index, (name, positionals, keywords, envis, mdtp, kpdtp, sstp) in enumerate(macro_processor.MACRO_NAME_TABLE):
+        print(index + 1, name, positionals, keywords, envis, mdtp + 1, 
+            (kpdtp + 1) if isinstance(kpdtp, int) else kpdtp, 
+            (sstp + 1) if isinstance(sstp, int) else sstp, 
+            sep='\t')
+
+def print_APTab():
     print(" Actual Parameter Table ".center(80, '='))
     print("Index\tActual Parameter Values")
     for index, val in enumerate(ACTUAL_PARAMTER_TABLE):
         print(index + 1, *val, sep='\t')
-
+    
 if __name__ == '__main__':
     main('./ass5.asm')
     # main('./macro.asm')
+
+    print_MNT()
+    print_MDT()
+    print_APTab()
