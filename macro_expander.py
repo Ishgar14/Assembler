@@ -184,12 +184,14 @@ def main(filename: str) -> None:
             else:
                 i += 1
 
-    with open('./output.asm', 'w') as f:
+    OUTPUT_FILENAME = './output.asm'
+    with open(OUTPUT_FILENAME, 'w') as f:
         for line in lines:
             # print(line)
-            f.write(line)
+            if line != '\n':
+                f.write(line)
     
-    assembler.FILE_NAME = './output.asm'
+    assembler.FILE_NAME = OUTPUT_FILENAME
     assembler.pass1()
     assembler.error_or_execute()
 
@@ -199,5 +201,5 @@ def main(filename: str) -> None:
         print(index + 1, *val, sep='\t')
 
 if __name__ == '__main__':
-    # main('./ass5.asm')
-    main('./macro.asm')
+    main('./ass5.asm')
+    # main('./macro.asm')
