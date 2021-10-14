@@ -1,5 +1,5 @@
 import re
-from typing import Set, Tuple, List
+from typing import Set, Tuple, List, Dict
 
 PREPROCESSOR_TOKENS = {'lcl', 'set', 'aif', 'ago'}
 
@@ -7,14 +7,16 @@ PREPROCESSOR_TOKENS = {'lcl', 'set', 'aif', 'ago'}
 MACRO_NAME_TABLE = [] # List of lists of [name, #pp, #kp, #ev, #MDTP, #KPTP, #SSIP]
 MACRO_DEFINITION_TABLE: List[str] = [] # list of all instructions of macro
 KEYWORD_PARAMTER_TABLE: List[Tuple[str, str]] = [] # List of tuple of (keyword parameter, actual value)
-PARAMETER_NAME_TABLE: List[str] = [] # List of names of all positional parameters
+PARAMETER_NAME_TABLE: Dict[str, List[str]] = {} # Dictionary of macro name to names of positional parameters
 SEQUENCE_SYMBOL_TABLE: List[int] = [] # List of positions in MDT of all sequence symbols
 EXPANSION_VARIABLE_TABLE: List[str] = [] # List of names of all expansion time variables
 UWU_TABLE: List[str] = [] # List of all your dopamine
 
+
 # To keep track of forward referenced symbols
 backlog_symbols: Set[str] = set()
-
+# To track duplicate macro names
+MACRO_NAMES = set()
 # To track presence of a sequence symbol within a macro
 SEQUENCE_EXISTS: bool = False
 
@@ -22,8 +24,14 @@ SEQUENCE_EXISTS: bool = False
 def parse_proto(line: str) -> None:
     name, positionals, keywords, expansionals = '', 0, 0, 0
     macro_def_tab_ptr, keyword_tab_ptr, seq_symbol_ptr = len(MACRO_DEFINITION_TABLE), len(KEYWORD_PARAMTER_TABLE), len(SEQUENCE_SYMBOL_TABLE)
+    parameter_names = []
 
     parts = [ p for p in re.split(r'\s+', line) if len(p) > 0 ]
+    if parts[0] in MACRO_NAMES:
+        print(f"Duplicate Macro Name {parts[0]}")
+        return
+    else:
+        MACRO_NAMES.add(parts[0])
     name = parts[0].ljust(10)
 
     for p in parts[1:]:
@@ -39,19 +47,22 @@ def parse_proto(line: str) -> None:
                 default_val = p[eq_index + 1:]
 
                 KEYWORD_PARAMTER_TABLE.append((parameter_name, default_val))
-                PARAMETER_NAME_TABLE.append(parameter_name)
+                # PARAMETER_NAME_TABLE.append(parameter_name)
+                parameter_names.append(parameter_name)
 
             
             # If it is a positional parameter
             else:
                 positionals += 1
-                PARAMETER_NAME_TABLE.append(p[1:])
+                # PARAMETER_NAME_TABLE.append(p[1:])
+                parameter_names.append(p[1:])
 
     if keywords == 0:
         keyword_tab_ptr = '-'
     
     MACRO_NAME_TABLE.append([name, positionals, keywords, expansionals, 
         macro_def_tab_ptr, keyword_tab_ptr, seq_symbol_ptr])
+    PARAMETER_NAME_TABLE[parts[0]] = parameter_names
 
 
 # This function properly filters out the crap and returns valid name of expansion variable
@@ -68,14 +79,16 @@ def purify(part: str) -> str:
     if '&' not in part:
         return part
 
+    param_table = PARAMETER_NAME_TABLE[list(PARAMETER_NAME_TABLE.keys())[-1]]
+
     try: 
         name = get_name(part)
         if name in EXPANSION_VARIABLE_TABLE:
             var_type = 'E'
             index = EXPANSION_VARIABLE_TABLE.index(name)
-        elif name in PARAMETER_NAME_TABLE:
+        elif name in param_table:
             var_type = 'P'
-            index = PARAMETER_NAME_TABLE.index(name)
+            index = param_table.index(name)
 
     except ValueError: 
         print(f"expansion variable `{name}` not declared anywhere in code") 
@@ -221,9 +234,11 @@ def print_MNT():
 
 def print_PNT():
     print(titalize(' Parameter Name Table '))
-    print('Index\tName')
-    for index, row in enumerate(PARAMETER_NAME_TABLE):
-        print(index + 1, row, sep='\t')
+    for _, val in enumerate(PARAMETER_NAME_TABLE):
+        print(titalize(f' {val} ', pattern='-'))
+        print('Index\tName')
+        for index, p in enumerate(PARAMETER_NAME_TABLE[val]):
+            print(index + 1, p, sep='\t')
 
 def print_KPT():
     print(titalize(' Keyword Parameter Default Table '))
