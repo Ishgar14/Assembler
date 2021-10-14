@@ -47,14 +47,12 @@ def parse_proto(line: str) -> None:
                 default_val = p[eq_index + 1:]
 
                 KEYWORD_PARAMTER_TABLE.append((parameter_name, default_val))
-                # PARAMETER_NAME_TABLE.append(parameter_name)
                 parameter_names.append(parameter_name)
 
             
             # If it is a positional parameter
             else:
                 positionals += 1
-                # PARAMETER_NAME_TABLE.append(p[1:])
                 parameter_names.append(p[1:])
 
     if keywords == 0:
@@ -153,13 +151,7 @@ def parse_prepro(line: str):
     # If we are defining a expansion time variable
     if parts[0] == 'lcl':
         MACRO_NAME_TABLE[-1][3] += 1
-        # EV.append(parts[1][1:])
         EXPANSION_VARIABLE_TABLE[list(EXPANSION_VARIABLE_TABLE.keys())[-1]].append(parts[1][1:])
-        # EXPANSION_VARIABLE_TABLE.append(parts[1][1:])
-
-    # If it is a set operation
-    elif parts[0].startswith('&') and parts[1] == 'set':
-        pass
 
     i = 0
     while i < len(parts):
@@ -240,10 +232,10 @@ def print_MNT():
 
 def print_PNT():
     print(titalize(' Parameter Name Table '))
-    for _, val in enumerate(PARAMETER_NAME_TABLE):
-        print(titalize(f' {val} ', pattern='-'))
+    for macro_name in PARAMETER_NAME_TABLE:
+        print(titalize(f' {macro_name} ', pattern='-'))
         print('Index\tName')
-        for index, p in enumerate(PARAMETER_NAME_TABLE[val]):
+        for index, p in enumerate(PARAMETER_NAME_TABLE[macro_name]):
             print(index + 1, p, sep='\t')
 
 def print_KPT():
@@ -256,14 +248,14 @@ def print_KPT():
 def print_EVT():
     print(titalize(' Expansion Variable Name Table '))
     print('Index\tName')
-    for _, val in enumerate(EXPANSION_VARIABLE_TABLE):
-        if len(EXPANSION_VARIABLE_TABLE[val]) == 0: 
-            print(f"No expansion variables in macro {val}")
+    for macro_name in EXPANSION_VARIABLE_TABLE:
+        if len(EXPANSION_VARIABLE_TABLE[macro_name]) == 0: 
+            print(f"No expansion variables in macro {macro_name}")
             continue
 
-        print(titalize(f' {val} ', pattern='-'))
+        print(titalize(f' {macro_name} ', pattern='-'))
         print('Index\tName')
-        for index, p in enumerate(EXPANSION_VARIABLE_TABLE[val]):
+        for index, p in enumerate(EXPANSION_VARIABLE_TABLE[macro_name]):
             print(index + 1, p, sep='\t')
         print()
 
