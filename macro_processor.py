@@ -9,7 +9,7 @@ MACRO_DEFINITION_TABLE: List[str] = [] # list of all instructions of macro
 KEYWORD_PARAMTER_TABLE: List[Tuple[str, str]] = [] # List of tuple of (keyword parameter, actual value)
 PARAMETER_NAME_TABLE: Dict[str, List[str]] = {} # Dictionary of macro name to names of positional parameters
 SEQUENCE_SYMBOL_TABLE: List[int] = [] # List of positions in MDT of all sequence symbols
-EXPANSION_VARIABLE_TABLE: List[str] = [] # List of names of all expansion time variables
+EXPANSION_VARIABLE_TABLE: Dict[str, List[str]] = {} # Dictionary of macro name to names of expansion time variables
 UWU_TABLE: List[str] = [] # List of all your dopamine
 
 
@@ -63,6 +63,7 @@ def parse_proto(line: str) -> None:
     MACRO_NAME_TABLE.append([name, positionals, keywords, expansionals, 
         macro_def_tab_ptr, keyword_tab_ptr, seq_symbol_ptr])
     PARAMETER_NAME_TABLE[parts[0]] = parameter_names
+    EXPANSION_VARIABLE_TABLE[parts[0]] = []
 
 
 # This function properly filters out the crap and returns valid name of expansion variable
@@ -79,19 +80,22 @@ def purify(part: str) -> str:
     if '&' not in part:
         return part
 
+    expansion_table = EXPANSION_VARIABLE_TABLE[list(EXPANSION_VARIABLE_TABLE.keys())[-1]]
     param_table = PARAMETER_NAME_TABLE[list(PARAMETER_NAME_TABLE.keys())[-1]]
 
     try: 
         name = get_name(part)
-        if name in EXPANSION_VARIABLE_TABLE:
+        if name in expansion_table:
             var_type = 'E'
-            index = EXPANSION_VARIABLE_TABLE.index(name)
+            index = expansion_table.index(name)
         elif name in param_table:
             var_type = 'P'
             index = param_table.index(name)
+        else:
+            raise ValueError()
 
     except ValueError: 
-        print(f"expansion variable `{name}` not declared anywhere in code") 
+        print(f"Parameter/Expansion variable `{name}` not declared anywhere in code") 
         exit(1)
 
     return part.replace(f'&{name}', f'({var_type}, {index+1})')
@@ -149,7 +153,9 @@ def parse_prepro(line: str):
     # If we are defining a expansion time variable
     if parts[0] == 'lcl':
         MACRO_NAME_TABLE[-1][3] += 1
-        EXPANSION_VARIABLE_TABLE.append(parts[1][1:])
+        # EV.append(parts[1][1:])
+        EXPANSION_VARIABLE_TABLE[list(EXPANSION_VARIABLE_TABLE.keys())[-1]].append(parts[1][1:])
+        # EXPANSION_VARIABLE_TABLE.append(parts[1][1:])
 
     # If it is a set operation
     elif parts[0].startswith('&') and parts[1] == 'set':
@@ -250,8 +256,16 @@ def print_KPT():
 def print_EVT():
     print(titalize(' Expansion Variable Name Table '))
     print('Index\tName')
-    for index, row in enumerate(EXPANSION_VARIABLE_TABLE):
-        print(index + 1, '\t'.join(row), sep='\t')
+    for _, val in enumerate(EXPANSION_VARIABLE_TABLE):
+        if len(EXPANSION_VARIABLE_TABLE[val]) == 0: 
+            print(f"No expansion variables in macro {val}")
+            continue
+
+        print(titalize(f' {val} ', pattern='-'))
+        print('Index\tName')
+        for index, p in enumerate(EXPANSION_VARIABLE_TABLE[val]):
+            print(index + 1, p, sep='\t')
+        print()
 
 def print_SST():
     print(titalize(' Sequence Symbol Name Table '))
