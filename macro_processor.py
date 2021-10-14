@@ -247,7 +247,6 @@ def print_KPT():
 
 def print_EVT():
     print(titalize(' Expansion Variable Name Table '))
-    print('Index\tName')
     for macro_name in EXPANSION_VARIABLE_TABLE:
         if len(EXPANSION_VARIABLE_TABLE[macro_name]) == 0: 
             print(f"No expansion variables in macro {macro_name}")
