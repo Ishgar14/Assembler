@@ -228,7 +228,7 @@ def print_MDT():
         print(index + 1, row, sep='\t')
 
 def print_MNT():
-    print(titalize(' Macro Name Table '))
+    print("\n\n", titalize(' Macro Name Table '))
     print('Index\tName\t\t#PP\t#KP\t#EV\tMDTP\tKPDTP\tSSTP')
     for index, (name, positionals, keywords, envis, mdtp, kpdtp, sstp) in enumerate(MACRO_NAME_TABLE):
         print(index + 1, name, positionals, keywords, envis, mdtp + 1, 
@@ -238,7 +238,7 @@ def print_MNT():
 
 
 def print_PNT():
-    print(titalize(' Parameter Name Table '))
+    print("\n\n", titalize(' Parameter Name Table '))
     for macro_name in PARAMETER_NAME_TABLE:
         print(titalize(f' {macro_name} ', pattern='-'))
         print('Index\tName')
@@ -246,14 +246,14 @@ def print_PNT():
             print(index + 1, p, sep='\t')
 
 def print_KPT():
-    print(titalize(' Keyword Parameter Default Table '))
+    print("\n\n", titalize(' Keyword Parameter Default Table '))
     print('Index\tName\tValue')
     for index, row in enumerate(KEYWORD_PARAMTER_TABLE):
         print(index + 1, '\t'.join(row), sep='\t')
 
 
 def print_EVT():
-    print(titalize(' Expansion Variable Name Table '))
+    print("\n\n", titalize(' Expansion Variable Name Table '))
     for macro_name in EXPANSION_VARIABLE_TABLE:
         if len(EXPANSION_VARIABLE_TABLE[macro_name]) == 0: 
             print(f"No expansion variables in macro {macro_name}")
@@ -265,17 +265,32 @@ def print_EVT():
             print(index + 1, p, sep='\t')
         print()
 
-def print_SST():
-    print(titalize(' Sequence Symbol Name Table '))
-    print('Index\tName')
-    for index, (name, _) in enumerate(SEQUENCE_SYMBOL_TABLE):
-        print(index + 1, name, sep='\t')
-
 def print_SSNT():
-    print(titalize(' Sequence Symbol Table '))
-    print('Index\tEntry')
-    for index, (_, entry) in enumerate(SEQUENCE_SYMBOL_TABLE):
-        print(index + 1, entry, sep='\t')
+    print("\n\n", titalize(' Sequence Symbol Name Table '))
+    for seq in SEQUENCE_SYMBOL_TABLE:
+        if len(SEQUENCE_SYMBOL_TABLE[seq]) == 0:
+            print(f"No sequences in macro {seq}")
+            continue
+
+        print(titalize(f" {seq} ", pattern='-'))
+        print('Index\tName')
+        for index, val in enumerate(SEQUENCE_SYMBOL_TABLE[seq]):
+            print(index + 1, val[0], sep='\t')
+        print()
+
+def print_SST():
+    print("\n\n", titalize(' Sequence Symbol Table '))
+    for seq in SEQUENCE_SYMBOL_TABLE:
+        if len(SEQUENCE_SYMBOL_TABLE[seq]) == 0:
+            print(f"No sequences in macro {seq}")
+            continue
+
+        print(titalize(f" {seq} ", pattern='-'))
+        print('Index\tEntry')
+        for index, val in enumerate(SEQUENCE_SYMBOL_TABLE[seq]):
+            print(index + 1, val[1], sep='\t')
+        print()
+
 
 def print_all_tables():
     print_MNT()
@@ -283,8 +298,8 @@ def print_all_tables():
     print_PNT()
     print_KPT()
     print_EVT()
-    print_SST()
     print_SSNT()
+    print_SST()
     
 
 def titalize(title: str, size: int = 75, pattern: str = '=') -> str:
