@@ -1,14 +1,14 @@
 import re
-from typing import Set, Tuple, List, Dict
+from typing import Any, Set, Tuple, List, Dict
 
 PREPROCESSOR_TOKENS = {'lcl', 'set', 'aif', 'ago'}
 
 # All the Tables
 MACRO_NAME_TABLE = [] # List of lists of [name, #pp, #kp, #ev, #MDTP, #KPTP, #SSIP]
 MACRO_DEFINITION_TABLE: List[str] = [] # list of all instructions of macro
-KEYWORD_PARAMTER_TABLE: List[Tuple[str, str]] = [] # List of tuple of (keyword parameter, actual value)
-PARAMETER_NAME_TABLE: Dict[str, List[str]] = {} # Dictionary of macro name to names of positional parameters
-SEQUENCE_SYMBOL_TABLE: List[int] = [] # List of positions in MDT of all sequence symbols
+KEYWORD_PARAMTER_TABLE: List[Tuple[str, str]] = [] # Map of tuple of (keyword parameter, actual value)
+PARAMETER_NAME_TABLE: Dict[str, List[str]] = {} # Map of macro name to names of positional parameters
+SEQUENCE_SYMBOL_TABLE: Dict[str, Tuple[str, int]] = {} # Map of positions in MDT of all sequence symbols
 EXPANSION_VARIABLE_TABLE: Dict[str, List[str]] = {} # Dictionary of macro name to names of expansion time variables
 UWU_TABLE: List[str] = [] # List of all your dopamine
 
@@ -62,6 +62,7 @@ def parse_proto(line: str) -> None:
         macro_def_tab_ptr, keyword_tab_ptr, seq_symbol_ptr])
     PARAMETER_NAME_TABLE[parts[0]] = parameter_names
     EXPANSION_VARIABLE_TABLE[parts[0]] = []
+    SEQUENCE_SYMBOL_TABLE[parts[0]] = []
 
 
 # This function properly filters out the crap and returns valid name of expansion variable
@@ -98,10 +99,15 @@ def purify(part: str) -> str:
 
     return part.replace(f'&{name}', f'({var_type}, {index+1})')
 
+# This function returns the last inserted key in given dictionary
+def get_last_key(table: Dict[str, Any]) -> str:
+    return table[list(table.keys())[-1]]
+
 # This function parses model statements
 def parse_models(line: str):
     global SEQUENCE_EXISTS
     parts = [ p for p in re.split(r'\s+', line) if len(p) > 0 ]
+    seq_tab = get_last_key(SEQUENCE_SYMBOL_TABLE)
     
     # If first part is a sequence symbol
     if parts[0].startswith('.'):
@@ -109,8 +115,7 @@ def parse_models(line: str):
         sequence = parts[0][1:]
         parts = parts[1:]
         if sequence in backlog_symbols: backlog_symbols.remove(sequence)
-        SEQUENCE_SYMBOL_TABLE.append((sequence, len(MACRO_DEFINITION_TABLE) + 1))
-
+        seq_tab.append((sequence, len(MACRO_DEFINITION_TABLE) + 1))
 
     i = 0
     while i < len(parts):
@@ -130,19 +135,21 @@ def parse_models(line: str):
 def parse_prepro(line: str):
     global SEQUENCE_EXISTS
     parts = [ p for p in re.split(r'\s+', line) if len(p) > 0 ]
+    seq_tab = get_last_key(SEQUENCE_SYMBOL_TABLE)
+
     # If first part is a sequence symbol
     if parts[0].startswith('.'):
         SEQUENCE_EXISTS = True
         sequence = parts[0][1:]
         parts = parts[1:]
-        SEQUENCE_SYMBOL_TABLE.append((sequence, len(MACRO_DEFINITION_TABLE) + 1))
+        seq_tab.append((sequence, len(MACRO_DEFINITION_TABLE) + 1))
         if sequence in backlog_symbols: backlog_symbols.remove(sequence)
-        parts[0] = f'(S, {len(SEQUENCE_SYMBOL_TABLE)})'
+        parts[0] = f'(S, {len(seq_tab)})'
     
     # If last part is a sequence symbol
     if parts[-1].startswith('.'):
         sequence = parts[-1][1:]
-        symbol_names = [seq[0] for seq in SEQUENCE_SYMBOL_TABLE]
+        symbol_names = [seq[0] for seq in seq_tab]
         if sequence in symbol_names:
             parts[-1] = f'(S, {symbol_names.index(sequence) + 1})'
         else:
