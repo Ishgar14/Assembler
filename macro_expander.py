@@ -222,7 +222,7 @@ def print_APTab():
     print(" Actual Parameter Table ".center(80, '='))
     print("Index\tMacro Name\tActual Parameter Values")
     for index, (name, val) in enumerate(ACTUAL_PARAMTER_TABLE):
-        print(index + 1, name, "    ",  *val, sep='\t')
+        print(index + 1, "%10s" % name,  *val, sep='\t')
     
 if __name__ == '__main__':
     # main('./ass5.asm')
