@@ -227,6 +227,6 @@ if __name__ == '__main__':
     # main('./ass5.asm')
     main('./macro.asm')
 
-    print_MNT()
-    print_MDT()
+    macro_processor.print_MNT()
+    macro_processor.print_MDT()
     print_APTab()
