@@ -96,7 +96,7 @@ def expand(macro_name: str) -> List[str]:
                 op1 = to_val(operation[0], expansion_variables)
                 op2 = to_val(operation[2], expansion_variables)
                 if func(op1, op2):
-                    i = macro_processor.SEQUENCE_SYMBOL_TABLE[macro_name][jump_to - 1][1] - 2
+                    i = macro_processor.SEQUENCE_SYMBOL_TABLE[macro_name][jump_to - 1][1] - 2 - macro_body_ptr
             
         i += 1
 
