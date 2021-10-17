@@ -24,25 +24,26 @@ def expand(macro_name: str) -> List[str]:
 
     i = 0
     while i < len(macro_body):
-        if macro_processor.classify(macro_body[i]) == 'm':
+        line = macro_body[i]
+        if macro_processor.classify(line) == 'm':
             # If no parameters in current macro instruction
-            if '(' not in macro_body[i]:
-                expansion.append(macro_body[i] + '\n')
+            if '(' not in line:
+                expansion.append(line + '\n')
                 i += 1
                 continue
             
-            mnemonic = macro_body[i][:macro_body[i].index(' ')]
+            mnemonic = line[:line.index(' ')]
             instruction.append(mnemonic)
 
             # If operand1 is not a macro parameter
-            if macro_body[i].index(',') < macro_body[i].index('('):
-                instruction.append(macro_body[i][macro_body[i].index(' ') + 1:macro_body[i].index(',')])
+            if line.index(',') < line.index('('):
+                instruction.append(line[line.index(' ') + 1:line.index(',')])
 
-            for para in get_next_parameter(macro_body[i]):
-                ind = macro_body[i].index(para)
-                if macro_body[i][ind - 1] in '+-':
-                    displacement = macro_body[i][ind - 1]
-                    value = to_val(macro_body[i][ind:].rstrip(), expansion_variables)
+            for para in get_next_parameter(line):
+                ind = line.index(para)
+                if line[ind - 1] in '+-':
+                    displacement = line[ind - 1]
+                    value = to_val(line[ind:].rstrip(), expansion_variables)
                     instruction[-1] += f"{displacement}{value}"
                     continue
                 number = int(para[-1]) - 1
@@ -55,23 +56,23 @@ def expand(macro_name: str) -> List[str]:
                     new_para = expansion_variables[para[para.index(',')+1:]]
 
                 # If the parameter is within a literal then
-                if macro_body[i][ind - 2] == '=':
+                if line[ind - 2] == '=':
                     instruction.append(f"='{new_para}'")
                 else:
                     instruction.append(new_para)
 
-            if '=' in macro_body[i]:
-                eq_index = macro_body[i].index('=')
+            if '=' in line:
+                eq_index = line.index('=')
                 # if operand 2 is literal number
-                if macro_body[i][eq_index + 2:-1].isnumeric():
+                if line[eq_index + 2:-1].isnumeric():
                     instruction[1] = instruction[1] + ', '
-                    instruction.append(macro_body[i][eq_index:])
+                    instruction.append(line[eq_index:])
             instruction.append('\n')
             expansion.append(instruction)
             instruction = []
         
         else: # if it is a preprocessing statement
-            parts = [s.strip() for s in macro_body[i].split(' ') if s.strip()]
+            parts = [s.strip() for s in line.split(' ') if s.strip()]
             if parts[0].lower() == 'lcl':
                 _, _, id = parts[1].partition(',')
                 expansion_variables[id[:-1]] = 0
