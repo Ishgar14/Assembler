@@ -1,7 +1,7 @@
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
 import macro_processor
 
-ACTUAL_PARAMTER_TABLE: List[List[str]] = []
+ACTUAL_PARAMTER_TABLE: List[Tuple[str, List[str]]] = []
 
 
 # This funciton expands the current macro call
@@ -18,7 +18,7 @@ def expand(macro_name: str) -> List[str]:
     macro_body = macro_definition[
         macro_body_ptr: macro_definition.index('mend', macro_body_ptr)]
     
-    parameters = ACTUAL_PARAMTER_TABLE[-1]
+    parameters = ACTUAL_PARAMTER_TABLE[-1][-1]
     instruction = []
     expansion = []
 
@@ -120,7 +120,7 @@ def to_val(s: str, ev) -> Union[str, int]:
     if s[1] == 'e':
         return ev[s[3:-1]]
     elif s[1] == 'p':
-        return int(ACTUAL_PARAMTER_TABLE[-1][int(s[3:-1]) - 1])
+        return int(ACTUAL_PARAMTER_TABLE[-1][-1][int(s[3:-1]) - 1])
 
 
 def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
@@ -145,7 +145,7 @@ def parse_macro_call(macro_name: str, parameters: List[str]) -> None:
             keywords = keywords[len(actual_parameters) - parameter_type.count('k'):]
         actual_parameters.extend(keywords)
 
-    ACTUAL_PARAMTER_TABLE.append(actual_parameters)
+    ACTUAL_PARAMTER_TABLE.append((macro_name, actual_parameters))
 
 
 # This function returns all keyword parameters of given macro
@@ -220,9 +220,9 @@ def print_MNT():
 
 def print_APTab():
     print(" Actual Parameter Table ".center(80, '='))
-    print("Index\tActual Parameter Values")
-    for index, val in enumerate(ACTUAL_PARAMTER_TABLE):
-        print(index + 1, *val, sep='\t')
+    print("Index\tMacro Name\tActual Parameter Values")
+    for index, (name, val) in enumerate(ACTUAL_PARAMTER_TABLE):
+        print(index + 1, name, "    ",  *val, sep='\t')
     
 if __name__ == '__main__':
     # main('./ass5.asm')
