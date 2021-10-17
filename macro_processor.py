@@ -97,7 +97,7 @@ def purify(part: str) -> str:
         print(f"Parameter/Expansion variable `{name}` not declared anywhere in code") 
         exit(1)
 
-    return part.replace(f'&{name}', f'({var_type}, {index+1})')
+    return part.replace(f'&{name}', f'({var_type},{index+1})')
 
 # This function returns the last inserted key in given dictionary
 def get_last_key(table: Dict[str, Any]) -> str:
@@ -144,14 +144,14 @@ def parse_prepro(line: str):
         parts = parts[1:]
         seq_tab.append((sequence, len(MACRO_DEFINITION_TABLE) + 1))
         if sequence in backlog_symbols: backlog_symbols.remove(sequence)
-        parts[0] = f'(S, {len(seq_tab)})'
+        parts[0] = f'(S,{len(seq_tab)})'
     
     # If last part is a sequence symbol
     if parts[-1].startswith('.'):
         sequence = parts[-1][1:]
         symbol_names = [seq[0] for seq in seq_tab]
         if sequence in symbol_names:
-            parts[-1] = f'(S, {symbol_names.index(sequence) + 1})'
+            parts[-1] = f'(S,{symbol_names.index(sequence) + 1})'
         else:
             backlog_symbols.add(sequence)
 
