@@ -45,7 +45,7 @@ def expand(macro_name: str) -> List[str]:
                     try: new_para = parameters[number]
                     except: 
                         keywords = dict(macro_processor.KEYWORD_PARAMTER_TABLE)
-                        new_para = keywords[macro_processor.PARAMETER_NAME_TABLE[number]]
+                        new_para = keywords[macro_processor.PARAMETER_NAME_TABLE[macro_name][number]]
                 else:
                     new_para = expansion_variables[para[para.index(',')+1:]]
 
@@ -82,7 +82,7 @@ def expand(macro_name: str) -> List[str]:
                     expansion_variables[id[:-1]] = eval(parts[2])
             elif parts[0].lower() == 'ago':
                 sequence_number = int(parts[1][3:-1]) - 1
-                i = macro_processor.SEQUENCE_SYMBOL_TABLE[sequence_number][1] - 2
+                i = macro_processor.SEQUENCE_SYMBOL_TABLE[macro_name][sequence_number][1] - 2
             elif parts[0].lower() == 'aif':
                 operation = [parts[1][1:], parts[2], parts[3][:-1]]
                 jump_to = int(parts[4][3:-1])
@@ -90,7 +90,7 @@ def expand(macro_name: str) -> List[str]:
                 op1 = to_val(operation[0], expansion_variables)
                 op2 = to_val(operation[2], expansion_variables)
                 if func(op1, op2):
-                    i = macro_processor.SEQUENCE_SYMBOL_TABLE[jump_to - 1][1] - 2
+                    i = macro_processor.SEQUENCE_SYMBOL_TABLE[macro_name][jump_to - 1][1] - 2
             
         i += 1
 
