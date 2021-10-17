@@ -40,6 +40,11 @@ def expand(macro_name: str) -> List[str]:
 
             for para in get_next_parameter(macro_body[i]):
                 ind = macro_body[i].index(para)
+                if macro_body[i][ind - 1] in '+-':
+                    displacement = macro_body[i][ind - 1]
+                    value = to_val(macro_body[i][ind:].rstrip(), expansion_variables)
+                    instruction[-1] += f"{displacement}{value}"
+                    continue
                 number = int(para[-1]) - 1
                 if para[1].lower() == 'p':
                     try: new_para = parameters[number]
