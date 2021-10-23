@@ -100,6 +100,10 @@ def expand(macro_name: str) -> List[str]:
             
         i += 1
 
+    for e in expansion:
+        if len(e) > 2:
+            e[1] += ','
+
     return expansion
 
 def get_next_parameter(instruction: str) -> str:
