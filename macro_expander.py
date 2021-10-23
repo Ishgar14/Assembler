@@ -163,7 +163,6 @@ def keywords_of(macro_name: str, macro_prototype_info: Dict[str, list]) -> list:
 
 
 def main(filename: str) -> None:
-    macro_processor.parse(filename)
     macro_names = set([m[0].strip() for m in macro_processor.MACRO_NAME_TABLE])
 
     with open(filename) as f:
@@ -225,8 +224,8 @@ def print_APTab():
         print(index + 1, "%10s" % name,  *val, sep='\t')
     
 if __name__ == '__main__':
-    # main('./ass5.asm')
-    main('./macro.asm')
+    macro_processor.parse("./ass5_macdef.asm")
+    main('./ass5_macall.asm')
 
     macro_processor.print_MNT()
     macro_processor.print_MDT()
