@@ -3,8 +3,8 @@ from typing import List, Tuple
 # TODO: Implement error checking
 
 KEYWORDS = []
-DELIMITERS = r"(){}[],;|&"
-OPERATOR = r'=<>+-*/'
+DELIMITERS = r"(){}[],;"
+OPERATOR = r'=<>+-*/&|'
 
 def classify(word: str) -> str:
     if not word or len(word) == 0: 
