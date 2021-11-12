@@ -45,7 +45,7 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
             else:
                 token_list.append((linenumber, word, classification))
             
-            prev, now = now, i + 1
+            prev, now = now + 1, i + 1
 
         elif line[i] in DELIMITERS:
             if prev < now:
@@ -64,7 +64,7 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
             prev, now = i + 1, i + 2
         
         elif line[i] in OPERATOR:
-            if line[i+1] in OPERATOR:
+            if (i + 1) < len(line) and line[i+1] in OPERATOR:
                 token_list.append((linenumber, line[i:i+2], 'operator'))
                 i += 1
             else:
@@ -86,6 +86,9 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
             prev = now = i
 
         i += 1
+
+    if len(token_list) == 0 and classify(line):
+        token_list.append((linenumber, line, classify(line)))
 
     return token_list
 
