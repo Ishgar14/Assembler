@@ -107,6 +107,7 @@ def main(filename: str):
                     line = line[line.index('*/')+3:]
                     inside_comment = False
                 else:
+                    linenumber += 1
                     continue
 
             if '//' in line:
