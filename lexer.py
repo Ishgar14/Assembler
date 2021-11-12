@@ -77,6 +77,11 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
         elif line[i] in '\'"':
             prev = i
             i += 1
+            
+            if line[i-1] == '"' and line.find('"', i) == -1 or line[i-1] == '\'' and line.find('\"', i) == -1:
+                print(f"Error: Unclosed string on line {linenumber}")
+                return token_list
+
             while line[i] not in '\'"':
                 i += 1
 
