@@ -1,7 +1,12 @@
 void main(){
     char name[] = "Rushikesh";
-    int age = 20, IQ = 200;
+    int age = 20, 
+    IQ 
+    = 
+    200;
 
+    int *ptr = &age;
+    age++;
     /*
         This is a multiline comment
     */
