@@ -1,11 +1,14 @@
 void main(){
     char name[] = "Rushikesh";
-    int age = 20, 
+    int age, 
     IQ 
     = 
     200;
 
-    int *ptr = &age;
+    printf("Enter your age: ");
+    scanf("%d", &age);
+
+    unsigned   char   *ptr = (unsigned  char * ) & age;
     age++;
     /*
         This is a multiline comment
