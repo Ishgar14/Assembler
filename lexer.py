@@ -125,6 +125,9 @@ def main(filename: str):
             
             all_tokens.extend(tokens)
             linenumber += 1
+        
+        if inside_comment:
+            print(f"\nError: The comment on line {comment_line} was not closed\n")
 
     lexeme_padding = max([len(t[1]) for t in all_tokens])
     print("Line Number", "Lexeme".ljust(lexeme_padding), "Token Type")
