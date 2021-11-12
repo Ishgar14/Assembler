@@ -16,7 +16,7 @@ def classify(word: str) -> str:
         return 'operator'
     elif word.isnumeric():
         return 'constant'
-    elif word.isalnum() and word[0].isalpha:
+    elif word.isalnum() and word[0].isalpha():
         return 'identifier'
     else:
         return None
