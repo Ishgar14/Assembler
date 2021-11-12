@@ -100,9 +100,26 @@ def main(filename: str):
 
     with open(filename, 'r') as f:
         linenumber = 1
+        inside_comment, comment_line = False, -1
         for line in f.readlines():
+            if inside_comment:
+                if '*/' in line:
+                    line = line[line.index('*/')+3:]
+                    inside_comment = False
+                else:
+                    continue
+
             if '//' in line:
                 line = line[:line.index('//')]
+            if '/*' in line:
+                if '*/' in line:
+                    start = line.index('/*')
+                    end   = line.index('*/')
+                    line  = line[:start] + line[end+3:]
+                else:
+                    line = line[:line.index('/*')]
+                    inside_comment = True
+                    comment_line = linenumber
 
             tokens = parse_line(line.strip(), linenumber)
             
