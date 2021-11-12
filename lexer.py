@@ -136,7 +136,7 @@ def main(filename: str):
             print(f"\nError: The comment on line {comment_line} was not closed\n")
 
     lexeme_padding = max([len(t[1]) for t in all_tokens])
-    print("Line Number", "Lexeme".ljust(lexeme_padding), "Token Type")
+    print("\nLine Number", "Lexeme".ljust(lexeme_padding), "Token Type")
     for (ln, lexeme, ttype) in all_tokens:
         print(str(ln).center(11), lexeme.ljust(lexeme_padding), ttype)
     
