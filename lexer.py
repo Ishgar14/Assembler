@@ -42,7 +42,7 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
 
             classification = classify(word)
             if not classification:
-                print("The fuq did you just type? ws '", word, "'", sep="")
+                print("Unknown token: '", word, "'", sep="")
             else:
                 token_list.append((linenumber, word, classification))
             
@@ -58,7 +58,7 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
                     classification = classify(word)
 
                     if not classification:
-                        print("The line is '", word, "'" , sep='')
+                        print("Unknown token: '", word, "'", sep="")
                     else:
                         token_list.append((linenumber, word, classification))
             
