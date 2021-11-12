@@ -1,7 +1,5 @@
 from typing import List, Tuple
 
-# TODO: Implement error checking
-
 KEYWORDS = set()
 DELIMITERS = set(r"(){}[],;")
 OPERATOR = set(r'=<>+-*/&|')
@@ -31,6 +29,7 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
     while i < len(line):
         if line[i].isalnum():
             now += 1
+        
         elif line[i] == ' ':
             if line[prev] == ' ': prev += 1
             word = line[prev:i]
@@ -42,11 +41,10 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
 
             classification = classify(word)
             if not classification:
-                print("Unknown token: '", word, "'", sep="")
+                print(f"Unknown token: '{word}' on line {linenumber}")
             else:
                 token_list.append((linenumber, word, classification))
             
-            # i += 1
             prev, now = now, i + 1
 
         elif line[i] in DELIMITERS:
@@ -58,11 +56,10 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
                     classification = classify(word)
 
                     if not classification:
-                        print("Unknown token: '", word, "'", sep="")
+                        print(f"Unknown token: '{word}' on line {linenumber}")
                     else:
                         token_list.append((linenumber, word, classification))
             
-            # if token_list[-1][2] != 'delimiter':
             token_list.append((linenumber, line[i], 'delimiter'))
             prev, now = i + 1, i + 2
         
@@ -77,7 +74,7 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
         elif line[i] in '\'"':
             prev = i
             i += 1
-            
+
             if line[i-1] == '"' and line.find('"', i) == -1 or line[i-1] == '\'' and line.find('\"', i) == -1:
                 print(f"Error: Unclosed string on line {linenumber}")
                 return token_list
@@ -117,6 +114,7 @@ def main(filename: str):
 
             if '//' in line:
                 line = line[:line.index('//')]
+
             if '/*' in line:
                 if '*/' in line:
                     start = line.index('/*')
