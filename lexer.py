@@ -2,9 +2,9 @@ from typing import List, Tuple
 
 # TODO: Implement error checking
 
-KEYWORDS = []
-DELIMITERS = r"(){}[],;"
-OPERATOR = r'=<>+-*/&|'
+KEYWORDS = set()
+DELIMITERS = set(r"(){}[],;")
+OPERATOR = set(r'=<>+-*/&|')
 
 def classify(word: str) -> str:
     if not word or len(word) == 0: 
@@ -92,7 +92,7 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
 def setup():
     with open('./keywords.txt', 'r') as keys:
         for keyword in keys:
-            KEYWORDS.append(keyword.lower().strip())
+            KEYWORDS.add(keyword.lower().strip())
 
 
 def main(filename: str):
