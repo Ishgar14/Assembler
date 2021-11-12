@@ -101,7 +101,9 @@ def main(filename: str):
     with open(filename, 'r') as f:
         linenumber = 1
         for line in f.readlines():
-            # print(line, end="")
+            if '//' in line:
+                line = line[:line.index('//')]
+
             tokens = parse_line(line.strip(), linenumber)
             
             all_tokens.extend(tokens)
