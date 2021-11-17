@@ -65,9 +65,9 @@ def parse_line(line: str, linenumber: int) -> List[Tuple[int, str, str]]:
         
         elif line[i] in OPERATOR:
             if (i + 1) < len(line) and line[i+1] in OPERATOR:
-                if (word := line[prev:now]) and classify(word):
+                word = line[prev:i].strip()
+                if classify(word):
                     token_list.append((linenumber, word, classify(word)))
-
                 token_list.append((linenumber, line[i:i+2], 'operator'))
                 i += 1
             else:
