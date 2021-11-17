@@ -5,6 +5,9 @@ void main(){
     = 
     200;
 
+    for(int i = 0; i < 10; i++) {
+        printf("i = %d\n", i);
+    }
     printf("Enter your age: ");
     scanf("%d", &age);
 
