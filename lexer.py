@@ -1,8 +1,8 @@
 from typing import List, Tuple
 
 KEYWORDS = set()
-DELIMITERS = set(r"(){}[],;")
-OPERATOR = set(r'=<>+-*/&|')
+DELIMITERS = set(r"(){}[],;#")
+OPERATOR = set(r'=<>+-*/&|.!')
 
 def classify(word: str) -> str:
     if not word or len(word) == 0: 
