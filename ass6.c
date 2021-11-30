@@ -18,7 +18,7 @@ void main(){
     */
 
     if(age >= 18 && IQ > 100){
-        // I have the big brain
+        // Big brain
         printf("You are a smart adult.");
     }
     else if(age >= 18 && IQ < 100){
