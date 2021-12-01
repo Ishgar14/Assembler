@@ -191,7 +191,7 @@ def pass1() -> bool:
         inst_type = (f'(AD, {str(DIRECTIVES["start"][0])})')
         if len(line) == 2:
             LC = int(line[1])
-            instructions.append(Instruction(mnemonic="start", operand1=LC, inst_type=inst_type, _LC=LC, line=i))
+            instructions.append(Instruction(mnemonic="start", operand1=LC, inst_type=inst_type, op1_type=f'(C, {LC})', _LC=LC, line=i))
         else:
             instructions.append(Instruction(mnemonic="start", inst_type=inst_type, _LC=LC, line=i))
 
